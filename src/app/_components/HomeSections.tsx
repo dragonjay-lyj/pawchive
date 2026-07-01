@@ -83,7 +83,7 @@ export function HomeAnnouncementBar() {
       </span>
       <p className="text-sm text-text-secondary">
         <span className="font-medium text-text-primary">{t("home.announcement.title")}</span> {t("home.announcement.body")}
-        <Link href="/import" className="ml-2 font-medium text-primary underline underline-offset-4 hover:text-primary/80">
+        <Link href="/importer" className="ml-2 font-medium text-primary underline underline-offset-4 hover:text-primary/80">
           {t("home.announcement.cta")}
         </Link>
       </p>

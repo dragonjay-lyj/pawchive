@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getAppVersion } from "@/lib/api";
+import { useI18n } from "@/lib/i18n/provider";
 
 export function SiteFooter() {
+  const { t } = useI18n();
   const [version, setVersion] = useState<string | null>(null);
 
   useEffect(() => {
@@ -22,11 +24,12 @@ export function SiteFooter() {
           <span className="font-display text-sm text-text-secondary">
             <span className="text-primary">Paw</span>chive
           </span>
-          <span>· Community frontend for pawchive.st</span>
+          <span className="hidden sm:inline">· Community frontend for pawchive.st</span>
         </div>
         <div className="flex items-center gap-4">
-          <Link href="/hash-lookup" className="hover:text-text-secondary transition-colors">Hash Lookup</Link>
-          <Link href="/settings#about" className="hover:text-text-secondary transition-colors">About</Link>
+          <Link href="/importer" className="hover:text-text-secondary transition-colors">{t("nav.importer")}</Link>
+          <Link href="/hash-lookup" className="hover:text-text-secondary transition-colors">{t("nav.hashLookup")}</Link>
+          <Link href="/settings#about" className="hover:text-text-secondary transition-colors">{t("settings.about")}</Link>
           {version && (
             <a
               href={`https://github.com/search?q=${encodeURIComponent(version)}`}
