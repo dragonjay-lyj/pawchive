@@ -1,9 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { SiteNav } from "@/app/_components/SiteNav";
 import { useI18n } from "@/lib/i18n/provider";
+import {
+  listImporterHistory,
+  recordImporterSubmission,
+  clearImporterHistory,
+  type ImporterHistoryEntry,
+} from "@/lib/importerHistory";
 
 const SERVICES: { key: string; label: string; cookie?: string }[] = [
   { key: "patreon", label: "Patreon", cookie: "session_id" },
@@ -18,8 +24,16 @@ const SERVICES: { key: string; label: string; cookie?: string }[] = [
 
 export default function ImporterPage() {
   const { t } = useI18n();
-  const [service, setService] = useState("patreon");
-  const [sessionKey, setSessionKey] = useState("");
+  const initial = useMemo(() => {
+    if (typeof window === "undefined") return { service: "patreon", key: "" };
+    const p = new URLSearchParams(window.location.search);
+    const s = p.get("service") ?? "";
+    const k = p.get("key") ?? "";
+    const validService = SERVICES.some((x) => x.key === s) ? s : "patreon";
+    return { service: validService, key: k };
+  }, []);
+  const [service, setService] = useState(initial.service);
+  const [sessionKey, setSessionKey] = useState(initial.key);
   const [channelIds, setChannelIds] = useState("");
   const [authId, setAuthId] = useState("");
   const [xbc, setXbc] = useState("");
@@ -28,6 +42,14 @@ export default function ImporterPage() {
   const [autoImport, setAutoImport] = useState(true);
   const [pending, setPending] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [history, setHistory] = useState<ImporterHistoryEntry[]>([]);
+
+  useEffect(() => {
+    setHistory(listImporterHistory());
+    const on = () => setHistory(listImporterHistory());
+    window.addEventListener("pawchive:importer-history-change", on);
+    return () => window.removeEventListener("pawchive:importer-history-change", on);
+  }, []);
 
   const currentCookieHint = SERVICES.find((s) => s.key === service)?.cookie;
 
@@ -61,12 +83,18 @@ export default function ImporterPage() {
         setChannelIds("");
         setAuthId("");
         setXbc("");
+        recordImporterSubmission({ service, ok: true, autoImport, saveKey });
       } else {
-        const text = await res.text().catch(() => "");
-        setMsg({ ok: false, text: text.slice(0, 300) || t("importer.failed") });
+        const raw = await res.text().catch(() => "");
+        const parsed = parseUpstreamError(raw, res.status);
+        const text = parsed || t("importer.failed");
+        setMsg({ ok: false, text });
+        recordImporterSubmission({ service, ok: false, autoImport, saveKey, message: text.slice(0, 200) });
       }
     } catch (e: any) {
-      setMsg({ ok: false, text: e?.message || t("importer.failed") });
+      const text = e?.message || t("importer.failed");
+      setMsg({ ok: false, text });
+      recordImporterSubmission({ service, ok: false, autoImport, saveKey, message: text.slice(0, 200) });
     } finally {
       setPending(false);
     }
@@ -211,10 +239,60 @@ export default function ImporterPage() {
               {pending ? t("importer.submitting") : t("importer.submit")}
             </button>
             {msg && (
-              <p className={`text-xs ${msg.ok ? "text-primary" : "text-error"}`}>{msg.text}</p>
+              <div
+                className={`rounded-lg border px-3 py-2 text-xs leading-relaxed whitespace-pre-line ${
+                  msg.ok
+                    ? "border-primary/30 bg-primary/5 text-primary"
+                    : "border-error/30 bg-error/5 text-error"
+                }`}
+              >
+                {msg.text}
+              </div>
             )}
           </div>
         </form>
+
+        {/* Submission history — local */}
+        {history.length > 0 && (
+          <section className="mt-8">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h2 className="font-display text-lg">{t("importer.history")}</h2>
+                <p className="text-[11px] text-text-tertiary">{t("importer.history.hint")}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm(t("importer.history.confirmClear"))) clearImporterHistory();
+                }}
+                className="rounded-md border border-white/10 px-2 py-1 text-[11px] text-text-secondary hover:border-error/40 hover:text-error"
+              >
+                {t("importer.history.clear")}
+              </button>
+            </div>
+            <ul className="divide-y divide-white/5 rounded-2xl border border-white/5 bg-surface-1">
+              {history.slice(0, 10).map((h) => (
+                <li key={h.ts} className="flex items-center gap-3 px-3 py-2 text-xs">
+                  <span
+                    className={
+                      "rounded-md px-1.5 py-0.5 text-[10px] font-medium " +
+                      (h.ok ? "bg-primary/15 text-primary" : "bg-error/15 text-error")
+                    }
+                  >
+                    {h.ok ? t("importer.history.ok") : t("importer.history.err")}
+                  </span>
+                  <span className="font-mono text-text-secondary capitalize">{h.service}</span>
+                  <span className="text-text-tertiary flex-1 truncate">
+                    {h.message || (h.autoImport ? "auto-import" : "manual")}
+                  </span>
+                  <span className="text-[10px] text-text-tertiary font-mono">
+                    {new Date(h.ts).toLocaleString()}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* Notes */}
         <section className="mt-8 space-y-4 text-sm text-text-secondary">
@@ -231,6 +309,35 @@ export default function ImporterPage() {
       </main>
     </div>
   );
+}
+
+/**
+ * Parse an upstream error response body into a compact message.
+ * pawchive.st returns plain text with one error per line for 4xx.
+ * Some paths still return HTML — for those we grab <title> or a
+ * .flash / .error block. Falls back to trimmed raw content.
+ */
+function parseUpstreamError(raw: string, status: number): string {
+  const body = raw.trim();
+  if (!body) return `HTTP ${status}`;
+
+  // HTML response? Try to extract a meaningful chunk.
+  if (/^\s*<(!doctype|html)/i.test(body) || /<\/html>/i.test(body)) {
+    const title = body.match(/<title>([^<]{2,200})<\/title>/i)?.[1]?.trim();
+    const flash = body.match(/<[^>]+class="[^"]*(?:flash|error|alert)[^"]*"[^>]*>([\s\S]{2,400}?)<\//i)?.[1];
+    const cleaned = (flash ?? title ?? "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    if (cleaned) return `${cleaned} (HTTP ${status})`;
+    return `HTTP ${status}`;
+  }
+
+  // Plain text: split into non-empty lines, keep the informative ones.
+  const lines = body
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const preview = lines.slice(0, 4).join("\n");
+  const suffix = lines.length > 4 ? `\n… +${lines.length - 4} more` : "";
+  return preview.length > 500 ? preview.slice(0, 500) + "…" : preview + suffix;
 }
 
 function CheckboxRow({

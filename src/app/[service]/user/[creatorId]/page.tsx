@@ -28,6 +28,30 @@ import { SiteNav } from "@/app/_components/SiteNav";
 
 type Params = Promise<{ service: string; creatorId: string }>;
 
+export async function generateMetadata({ params }: { params: Params }) {
+  const { service, creatorId } = await params;
+  try {
+    const profile = await getCreatorProfile(service, creatorId);
+    const name = profile.name || `Creator ${creatorId}`;
+    const platform = getServiceLabel(service);
+    return {
+      title: `${name} · ${platform}`,
+      description: `Archive of ${name}'s ${platform} posts on Pawchive.`,
+      openGraph: {
+        type: "profile",
+        title: `${name} · ${platform}`,
+        description: `Archive of ${name}'s ${platform} posts on Pawchive.`,
+        images: [{ url: getCreatorBannerUrl(service, creatorId) }],
+      },
+      alternates: {
+        canonical: `/${service}/user/${creatorId}`,
+      },
+    };
+  } catch {
+    return { title: `${getServiceLabel(service)} creator ${creatorId}` };
+  }
+}
+
 export default async function CreatorPage({ params }: { params: Params }) {
   const { service, creatorId } = await params;
 

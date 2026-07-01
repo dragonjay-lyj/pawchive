@@ -257,6 +257,13 @@ export const dict = {
     "importer.notes2": "While Pawchive takes steps to prevent detection, no guarantees can be made. Everything is at your own risk.",
     "importer.autoImportTitle": "Auto-import",
     "importer.autoImportBody": "Auto-import lets Pawchive detect new posts and creators by storing keys long-term. All keys are encrypted with an RSA 4096 key. When admins start an auto-import round, an external machine sends the private key to the backend to decrypt working keys. Even if Pawchive's database were compromised, tokens stay anonymous and secure.",
+    "importer.history": "Your submissions (this browser)",
+    "importer.history.hint": "Session keys are never stored — only service, time and outcome.",
+    "importer.history.empty": "No submissions from this browser yet.",
+    "importer.history.clear": "Clear history",
+    "importer.history.confirmClear": "Clear all local submission history?",
+    "importer.history.ok": "Success",
+    "importer.history.err": "Failed",
 
     // -------- Importer tutorial --------
     "tutorial.title": "How to get your session key",
@@ -279,6 +286,7 @@ export const dict = {
     "tutorial.discordStep3": "Copy the returned string between quotes — that's your self-token.",
     "tutorial.channelHelp": "Instructions on how to find channel IDs are in Discord's own docs.",
     "tutorial.otherBrowsers": "For other browsers, consult that browser's docs on inspecting stored cookies.",
+    "tutorial.bookmarkletHint": "Prefer one-click? Drag the bookmarklet to your bookmarks bar, open the paysite in a tab and click the bookmark — it reads the cookie and opens the Importer with the key prefilled.",
     "tutorial.warning": "Never share your session key or self-token publicly. Anyone with it can act as you on the paysite.",
     "settings.content.title": "Content Preferences",
     "settings.content.nsfw": "NSFW Content",
@@ -604,6 +612,13 @@ export const dict = {
     "importer.notes2": "Pawchive 会做防检测努力，但无法保证 100% 安全，一切自行承担风险。",
     "importer.autoImportTitle": "自动导入",
     "importer.autoImportBody": "自动导入允许 Pawchive 长期保存密钥以自动检测新帖子/创作者。所有密钥用 RSA 4096 加密，管理员启动自动导入时，外部机器把私钥送入后端解密。即使数据库被入侵，token 也保持匿名和安全。",
+    "importer.history": "本浏览器的提交记录",
+    "importer.history.hint": "会话密钥不会保存 —— 仅记录平台、时间和结果。",
+    "importer.history.empty": "本浏览器暂无提交记录。",
+    "importer.history.clear": "清空记录",
+    "importer.history.confirmClear": "确定清空所有本地提交记录？",
+    "importer.history.ok": "成功",
+    "importer.history.err": "失败",
 
     // -------- 教程 --------
     "tutorial.title": "如何获取会话密钥",
@@ -626,6 +641,7 @@ export const dict = {
     "tutorial.discordStep3": "复制返回字符串引号之间的内容，即为你的自身 token。",
     "tutorial.channelHelp": "频道 ID 的获取方法可参考 Discord 官方文档。",
     "tutorial.otherBrowsers": "其它浏览器请查阅相应文档以查看 cookie。",
+    "tutorial.bookmarkletHint": "想一键完成？把书签拖到浏览器书签栏，在付费站的标签页中点击即可 —— 它会读取 cookie 并跳转到已预填 key 的 Importer 页面。",
     "tutorial.warning": "切勿在任何地方公开你的会话密钥/自身 token。任何持有者都能以你的身份操作付费站。",
     "settings.content.title": "内容偏好",
     "settings.content.nsfw": "NSFW 内容",

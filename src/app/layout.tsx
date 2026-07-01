@@ -1,14 +1,68 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { SiteFooter } from "./_components/SiteFooter";
 import { PrefsBoot } from "./_components/PrefsBoot";
 import { I18nProvider } from "@/lib/i18n/provider";
 import { detectLocaleFromRequest } from "@/lib/i18n/server";
+import { SITE_NAME, SITE_TAGLINE_EN, getSiteUrl } from "@/lib/site";
+
+const SITE_URL = getSiteUrl();
 
 export const metadata: Metadata = {
-  title: "Pawchive — Public Archive for Creators",
-  description:
-    "Pawchive is a public archiver for Patreon, Pixiv Fanbox, Fantia, and more. Browse, search, and discover content from your favorite creators.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: `${SITE_NAME} — Public Archive for Creators`,
+    template: `%s · ${SITE_NAME}`,
+  },
+  description: SITE_TAGLINE_EN,
+  applicationName: SITE_NAME,
+  keywords: [
+    "pawchive", "patreon archive", "fanbox archive", "fantia archive",
+    "subscribestar", "gumroad", "discord archive", "boosty", "afdian",
+    "creator content", "public archive",
+  ],
+  authors: [{ name: "Pawchive community" }],
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
+  },
+  alternates: {
+    canonical: "/",
+    languages: {
+      en: "/",
+      "zh-CN": "/",
+    },
+  },
+  openGraph: {
+    type: "website",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} — Public Archive for Creators`,
+    description: SITE_TAGLINE_EN,
+    locale: "en_US",
+    alternateLocale: ["zh_CN"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} — Public Archive for Creators`,
+    description: SITE_TAGLINE_EN,
+  },
+  icons: {
+    icon: "/favicon.ico",
+  },
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#09090b",
+  colorScheme: "dark",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default async function RootLayout({

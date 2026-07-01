@@ -32,6 +32,41 @@ type Params = Promise<{
 
 export const dynamic = "force-dynamic";
 
+export async function generateMetadata({ params }: { params: Params }) {
+  const { service, creatorId, postId } = await params;
+  try {
+    const post = await getPost(service, creatorId, postId);
+    const title = post.title || `Post ${postId}`;
+    const description = post.substring
+      ? stripHtml(post.substring).slice(0, 200)
+      : `${getServiceLabel(post.service)} post from creator #${post.user}`;
+    const imageUrl = post.file?.path ? getThumbUrl(post.file.path) : undefined;
+    return {
+      title,
+      description,
+      openGraph: {
+        type: "article",
+        title,
+        description,
+        images: imageUrl ? [{ url: imageUrl }] : undefined,
+        publishedTime: post.published,
+        modifiedTime: post.edited,
+      },
+      twitter: {
+        card: imageUrl ? "summary_large_image" : "summary",
+        title,
+        description,
+        images: imageUrl ? [imageUrl] : undefined,
+      },
+      alternates: {
+        canonical: `/${service}/user/${creatorId}/post/${postId}`,
+      },
+    };
+  } catch {
+    return { title: `Post ${postId}` };
+  }
+}
+
 export default async function PostDetailPage({ params }: { params: Params }) {
   const { service, creatorId, postId } = await params;
 
@@ -59,8 +94,31 @@ export default async function PostDetailPage({ params }: { params: Params }) {
     ...post.attachments,
   ];
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": post.title || `Post ${postId}`,
+    "datePublished": post.published,
+    "dateModified": post.edited || post.published,
+    "author": {
+      "@type": "Person",
+      "name": `Creator #${post.user}`,
+      "identifier": post.user,
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Pawchive",
+    },
+    "image": post.file?.path ? getThumbUrl(post.file.path) : undefined,
+    "description": post.substring ? stripHtml(post.substring).slice(0, 200) : undefined,
+  };
+
   return (
     <div className="min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <PostNavbar title={post.title} />
 
       <main className="mx-auto max-w-[1280px] px-4 pb-24 sm:px-6 lg:px-8">
