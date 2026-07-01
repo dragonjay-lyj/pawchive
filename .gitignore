@@ -1,0 +1,99 @@
+# ============================================================
+# Dependencies
+# ============================================================
+node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# ============================================================
+# Next.js build output
+# ============================================================
+.next/
+out/
+build/
+dist/
+
+# Note: next-env.d.ts is auto-generated but should be committed
+# (see https://nextjs.org/docs/app/api-reference/config/typescript)
+
+# ============================================================
+# Environment / secrets
+# ============================================================
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Admin persistence — scrypt-hashed admin password lives here
+.data/
+
+# ============================================================
+# Editor / IDE
+# ============================================================
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ============================================================
+# OS junk
+# ============================================================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ============================================================
+# Logs
+# ============================================================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.log
+
+# ============================================================
+# Test / coverage
+# ============================================================
+coverage/
+*.lcov
+.nyc_output/
+
+# ============================================================
+# Tooling caches
+# ============================================================
+.turbo/
+.eslintcache
+.stylelintcache
+.cache/
+
+# ============================================================
+# Local tooling — Claude Code workspace + external agents
+# ============================================================
+.claude/
+.codewhale/
+
+# ============================================================
+# Legacy scaffolding scripts (kept locally, not shipped)
+# ============================================================
+_browse.tsx
+_head.txt
+gen_browse.py
+
+# ============================================================
+# TypeScript incremental cache
+# ============================================================
+*.tsbuildinfo
+
+# ============================================================
+# Deployment
+# ============================================================
+.vercel/
+.netlify/

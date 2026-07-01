@@ -1,0 +1,265 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Pawchive Design Tokens — 五层风格体系
+   L1: Dark Minimal · L2: Fluent Design 2
+   L3: Material Design 3 · L4: Glassmorphism
+   L5: Neo-Brutalism
+   ============================================================ */
+
+@theme {
+  /* --- L1: Dark Minimal 基础色板 --- */
+  --color-surface-0: #09090b;
+  --color-surface-1: #121214;
+  --color-surface-2: #1a1a1f;
+  --color-surface-3: #24242b;
+  --color-surface-4: #2e2e38;
+
+  --color-text-primary: #f4f4f6;
+  --color-text-secondary: #a1a1aa;
+  --color-text-tertiary: #71717a;
+  --color-text-disabled: #52525b;
+
+  /* --- Platform accent colors (L5: Neo-Brutalism) --- */
+  --color-platform-patreon: #FF424D;
+  --color-platform-fanbox: #4A90D9;
+  --color-platform-fantia: #FF6FB5;
+  --color-platform-subscribestar: #35C759;
+  --color-platform-discord: #5865F2;
+  --color-platform-gumroad: #FF90E8;
+  --color-platform-boosty: #F15A29;
+  --color-platform-afdian: #946CE6;
+
+  /* --- L3: MD3 Primary --- */
+  --color-primary: #D0BCFF;
+  --color-primary-container: #4A4459;
+  --color-on-primary: #381E72;
+  --color-on-primary-container: #EADDFF;
+
+  /* --- L3: MD3 Secondary --- */
+  --color-secondary: #CCC2DC;
+  --color-secondary-container: #4A4458;
+  --color-on-secondary: #332D41;
+  --color-on-secondary-container: #E8DEF8;
+
+  /* --- L3: MD3 Tertiary --- */
+  --color-tertiary: #EFB8C8;
+  --color-tertiary-container: #633B48;
+  --color-on-tertiary: #492532;
+  --color-on-tertiary-container: #FFD8E4;
+
+  /* --- L3: MD3 Error --- */
+  --color-error: #F2B8B5;
+  --color-error-container: #8C1D18;
+  --color-on-error: #601410;
+  --color-on-error-container: #F9DEDC;
+
+  /* --- Glassmorphism tokens --- */
+  --color-glass-bg: rgba(255, 255, 255, 0.04);
+  --color-glass-border: rgba(255, 255, 255, 0.08);
+  --color-glass-highlight: rgba(255, 255, 255, 0.12);
+
+  /* --- Mica / Fluent blur --- */
+  --color-mica-bg: rgba(18, 18, 20, 0.72);
+
+  /* --- Typography --- */
+  --font-sans: "Inter", "Noto Sans SC", system-ui, sans-serif;
+  --font-display: "DM Serif Display", "Noto Serif SC", Georgia, serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+
+  /* --- Spacing / Radius --- */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+
+  /* --- Shadows (dark theme) --- */
+  --shadow-md3-1: 0 1px 2px 0 rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
+  --shadow-md3-2: 0 1px 2px 0 rgba(0, 0, 0, 0.3), 0 2px 6px 2px rgba(0, 0, 0, 0.15);
+  --shadow-md3-3: 0 4px 8px 3px rgba(0, 0, 0, 0.15), 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.32);
+
+  /* --- Animations --- */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-circ: cubic-bezier(0.85, 0, 0.15, 1);
+}
+
+/* ============================================================
+   Global Base
+   ============================================================ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-surface-4) transparent;
+}
+
+body {
+  background-color: var(--color-surface-0);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   Utility layers
+   ============================================================ */
+
+/* Glassmorphism utility */
+.glass {
+  background: var(--color-glass-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--color-glass-border);
+}
+
+.glass-strong {
+  background: rgba(18, 18, 20, 0.64);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+/* Mica bar (Fluent Design 2) */
+.mica {
+  background: var(--color-mica-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Neo-Brutalism platform pill */
+.neo-badge {
+  border: 2px solid currentColor;
+  box-shadow: 2px 2px 0px currentColor;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.neo-badge:hover {
+  box-shadow: 4px 4px 0px currentColor;
+  transform: translate(-1px, -1px);
+}
+
+/* MD3 card surface */
+.card-md3 {
+  background: var(--color-surface-2);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+.card-md3:hover {
+  background: var(--color-surface-3);
+}
+
+/* Bento grid item */
+.bento {
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Skeleton loading */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-2) 25%,
+    var(--color-surface-3) 50%,
+    var(--color-surface-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Fade-in animation for infinite scroll */
+.fade-in-up {
+  animation: fadeInUp 0.4s var(--ease-out-expo) both;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Focus ring for glass inputs */
+.glass-focus:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(208, 188, 255, 0.5), 0 0 24px rgba(208, 188, 255, 0.15);
+}
+
+/* ============================================================
+   Theme overrides — driven by [data-theme] on <html>
+   ============================================================ */
+html[data-theme="darker"] {
+  --color-surface-0: #000000;
+  --color-surface-1: #09090b;
+  --color-surface-2: #121214;
+  --color-surface-3: #1a1a1f;
+  --color-surface-4: #24242b;
+  --color-mica-bg: rgba(9, 9, 11, 0.82);
+}
+
+html[data-theme="midnight"] {
+  --color-surface-0: #0b0d1f;
+  --color-surface-1: #12142e;
+  --color-surface-2: #1a1c3d;
+  --color-surface-3: #24274f;
+  --color-surface-4: #2e3260;
+  --color-primary: #a78bfa;
+  --color-on-primary: #1e1b4b;
+  --color-mica-bg: rgba(18, 20, 46, 0.75);
+}
+
+/* Font family override */
+html[data-font="serif"] body { font-family: var(--font-display); }
+html[data-font="mono"] body { font-family: var(--font-mono); }
+
+/* Radius scale */
+html[data-radius="rounded"] {
+  --radius-sm: 0.75rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.75rem;
+  --radius-2xl: 2rem;
+}
+html[data-radius="sharp"] {
+  --radius-sm: 0.125rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.5rem;
+}
+
+/* Blur thumbnails until hover */
+html[data-blur-thumbs="on"] .card-md3 img,
+html[data-blur-thumbs="on"] .fancard img {
+  filter: blur(14px);
+  transition: filter 0.3s ease;
+}
+html[data-blur-thumbs="on"] .card-md3:hover img,
+html[data-blur-thumbs="on"] .card-md3 img:hover,
+html[data-blur-thumbs="on"] .fancard:hover img {
+  filter: blur(0);
+}
+
+/* Scroll-driven timeline connector */
+.timeline-connector {
+  position: relative;
+}
+.timeline-connector::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--color-primary), transparent);
+}
