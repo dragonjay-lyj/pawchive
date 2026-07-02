@@ -39,7 +39,7 @@ export default function BrowsePage() {
           setHasMore(d.length >= PAGE_SIZE);
           setOffset(PAGE_SIZE);
         }
-      } catch (e: any) { if (!cancelled) setError(e.message || "Failed"); }
+      } catch (e: unknown) { if (!cancelled) setError(e instanceof Error ? e.message : "Failed"); }
       finally { if (!cancelled) setLoading(false); }
     })();
     return () => { cancelled = true; };
@@ -66,8 +66,8 @@ export default function BrowsePage() {
     finally { setLoadingMore(false); }
   };
 
-  function toggle(setter: any, v: string) {
-    setter((prev: Set<string>) => { const n = new Set(prev); n.has(v) ? n.delete(v) : n.add(v); return n; });
+  function toggle(setter: React.Dispatch<React.SetStateAction<Set<string>>>, v: string) {
+    setter((prev) => { const n = new Set(prev); if (n.has(v)) n.delete(v); else n.add(v); return n; });
   }
 
   const clearFilters = () => {
@@ -81,7 +81,7 @@ export default function BrowsePage() {
     if (selPlatforms.size > 0 && !selPlatforms.has(p.service)) return false;
     if (searchText && !p.title?.toLowerCase().includes(searchText.toLowerCase())) return false;
     if (selFormats.size > 0) {
-      const exts = [...p.attachments, p.file].filter(Boolean).map(f => (f as any).name?.split(".").pop()?.toUpperCase() || "");
+      const exts = [...p.attachments, p.file].filter(Boolean).map(f => (f as { name?: string }).name?.split(".").pop()?.toUpperCase() || "");
       if (!exts.some(e => selFormats.has(e))) return false;
     }
     return true;
@@ -135,12 +135,12 @@ export default function BrowsePage() {
               <div className="flex rounded-xl border border-white/5 bg-surface-2 p-0.5">
                 {(["grid","waterfall","list"] as const).map(v => (
                   <button key={v} onClick={() => setViewMode(v)} className={viewMode === v ? "rounded-lg bg-surface-4 px-3 py-1.5 text-xs font-medium text-text-primary" : "rounded-lg px-3 py-1.5 text-xs font-medium text-text-tertiary hover:text-text-secondary"}>
-                    {t(`browse.view.${v}` as any)}
+                    {t(`browse.view.${v}`)}
                   </button>
                 ))}
               </div>
             </div>
-            <select value={sortOrder} onChange={e => setSortOrder(e.target.value as any)} className="rounded-xl border border-white/5 bg-surface-2 px-3 py-1.5 text-xs text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary/30">
+            <select value={sortOrder} onChange={e => setSortOrder(e.target.value as "newest" | "oldest")} className="rounded-xl border border-white/5 bg-surface-2 px-3 py-1.5 text-xs text-text-secondary focus:outline-none focus:ring-1 focus:ring-primary/30">
               <option value="newest">{t("browse.sort.newest")}</option>
               <option value="oldest">{t("browse.sort.oldest")}</option>
             </select>

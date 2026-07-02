@@ -1,12 +1,12 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
-import { dict, LOCALES, type Locale, type DictKey } from "./dict";
+import { dict, LOCALES, type Locale } from "./dict";
 
 interface I18nCtx {
   locale: Locale;
   setLocale: (l: Locale) => void;
-  t: (key: DictKey, vars?: Record<string, string | number>) => string;
+  t: (key: string, vars?: Record<string, string | number>) => string;
 }
 
 const Ctx = createContext<I18nCtx | null>(null);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import type { FileAttachment } from "@/lib/types";
 import { getFileUrl, getThumbUrl } from "@/lib/api";
 
@@ -146,6 +146,23 @@ function Lightbox({
   // Drag to pan when zoomed
   const [dragging, setDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, panX: 0, panY: 0 });
+
+  // Wheel zoom — use a ref-based handler to set passive: false,
+  // because React's onWheel is passive in React 19 (e.preventDefault is a no-op).
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey && Math.abs(e.deltaY) < 30) return;
+      e.preventDefault();
+      if (e.deltaY < 0) zoomIn();
+      else zoomOut();
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [zoomIn, zoomOut]);
+
   const onPointerDown = (e: React.PointerEvent) => {
     if (zoom <= 1) return;
     setDragging(true);
@@ -162,14 +179,6 @@ function Lightbox({
   const onPointerUp = (e: React.PointerEvent) => {
     setDragging(false);
     try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch {}
-  };
-
-  // Wheel zoom
-  const onWheel = (e: React.WheelEvent) => {
-    if (!e.ctrlKey && !e.metaKey && Math.abs(e.deltaY) < 30) return;
-    e.preventDefault();
-    if (e.deltaY < 0) zoomIn();
-    else zoomOut();
   };
 
   return (
@@ -257,8 +266,8 @@ function Lightbox({
       {/* Image */}
       <div
         className="relative flex h-full w-full items-center justify-center overflow-hidden"
+        ref={containerRef}
         onClick={(e) => e.stopPropagation()}
-        onWheel={onWheel}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}

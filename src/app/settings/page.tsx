@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { setSessionCookie, getSessionCookie, getAppVersion } from "@/lib/api";
 import { loadPrefs, savePrefs, DEFAULT_PREFS, type Preferences, type Theme, type Rating } from "@/lib/preferences";
@@ -381,7 +381,7 @@ export default function SettingsPage() {
                         )}
                       >
                         <p className={cn("text-lg", sampleClass)}>Aa 你好</p>
-                        <p className="mt-1 text-xs text-text-tertiary">{t(`settings.appearance.font.${f}` as any)}</p>
+                        <p className="mt-1 text-xs text-text-tertiary">{t(`settings.appearance.font.${f}`)}</p>
                       </button>
                     );
                   })}
@@ -409,7 +409,7 @@ export default function SettingsPage() {
                         )}
                       >
                         <div className={cn("h-10 w-full bg-primary/20", previewRadius)} />
-                        <p className="mt-2 text-xs text-text-tertiary">{t(`settings.appearance.radius.${r}` as any)}</p>
+                        <p className="mt-2 text-xs text-text-tertiary">{t(`settings.appearance.radius.${r}`)}</p>
                       </button>
                     );
                   })}

@@ -32,9 +32,17 @@ async function proxyRequest(req: NextRequest, params: { path: string[] }): Promi
   const cookieParts: string[] = [];
   const browserCookie = req.headers.get('cookie');
   const sessionOverride = req.headers.get('x-pawchive-session');
-  const hasBrowserSession = browserCookie ? /(^|;\s*)session=/.test(browserCookie) : false;
-  if (browserCookie) cookieParts.push(browserCookie);
-  if (sessionOverride && !hasBrowserSession) cookieParts.push(`session=${sessionOverride}`);
+
+  if (browserCookie) {
+    if (sessionOverride) {
+      // Replace existing session= value with the override
+      const cleaned = browserCookie.replace(/(^|;\s*)session=[^;]*/, '').replace(/^;\s*/, '');
+      if (cleaned) cookieParts.push(cleaned);
+    } else {
+      cookieParts.push(browserCookie);
+    }
+  }
+  if (sessionOverride) cookieParts.push(`session=${sessionOverride}`);
   if (cookieParts.length) forwardHeaders.set('Cookie', cookieParts.join('; '));
 
   let body: string | undefined;

@@ -6,15 +6,14 @@ import {
   getCreatorLinkedAccounts,
   getCreatorAnnouncements,
   getCreatorFancards,
-  getThumbnailUrl,
   getServiceColor,
   getServiceLabel,
   getCreatorAvatarUrl,
   getCreatorBannerUrl,
   getFileUrl,
 } from "@/lib/api";
-import type { Post, LinkedAccount, Announcement, Fancard } from "@/lib/types";
-import { formatDate, formatRelativeDate, formatFileSize, cn } from "@/lib/utils";
+import type { Post, LinkedAccount, Fancard } from "@/lib/types";
+import { formatFileSize } from "@/lib/utils";
 import { FavoriteButton } from "@/app/_components/FavoriteButton";
 import { SafeImage } from "@/app/_components/SafeImage";
 import { CreatorStrings } from "@/app/_components/CreatorStrings";
@@ -313,41 +312,6 @@ async function CreatorContentGrid({
   }
 
   return <CreatorPostsPager service={service} creatorId={creatorId} initialPosts={posts} />;
-}
-
-function CreatorPostCard({ post, index }: { post: Post; index: number }) {
-  const thumb = getThumbnailUrl(post);
-  const color = getServiceColor(post.service);
-
-  return (
-    <Link
-      href={`/${post.service}/user/${post.user}/post/${post.id}`}
-      className="card-md3 group flex flex-col fade-in-up"
-      style={{ animationDelay: `${index * 40}ms` }}
-    >
-      <div className="relative overflow-hidden bg-surface-3">
-        <img
-          src={thumb}
-          alt={post.title}
-          className="h-full w-full object-cover transition-all duration-500 group-hover:scale-105"
-          loading="lazy"
-          style={{ aspectRatio: "3/4" }}
-        />
-        <div
-          className="absolute bottom-0 left-0 right-0 h-1"
-          style={{ backgroundColor: color }}
-        />
-      </div>
-      <div className="flex flex-col gap-1 p-2.5">
-        <h3 className="line-clamp-2 text-xs font-medium leading-snug">
-          {post.title || "Untitled"}
-        </h3>
-        <p className="text-[10px] text-text-tertiary">
-          {formatRelativeDate(post.published)}
-        </p>
-      </div>
-    </Link>
-  );
 }
 
 function ContentGridSkeleton() {

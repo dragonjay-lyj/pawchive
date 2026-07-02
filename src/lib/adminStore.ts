@@ -64,9 +64,9 @@ export async function verifyAdminCredentials(user: string, pass: string): Promis
     if (actual.length !== expected.length) return false;
     try { return timingSafeEqual(actual, expected); } catch { return false; }
   }
-  // Fallback to env / defaults
-  const okUser = user.length === envUser().length && user === envUser();
-  const okPass = pass.length === envPass().length && pass === envPass();
+  // Fallback to env / defaults — timing-safe comparison
+  const okUser = timingSafeEqual(Buffer.from(user), Buffer.from(envUser()));
+  const okPass = timingSafeEqual(Buffer.from(pass), Buffer.from(envPass()));
   return okUser && okPass;
 }
 
@@ -92,8 +92,8 @@ export async function updateAdminPassword(
   const rec = makeStored(nextUser, newPass);
   try {
     await writeStored(rec);
-  } catch (e: any) {
-    return { ok: false, error: `write-failed: ${e?.message ?? "unknown"}` };
+  } catch (e: unknown) {
+    return { ok: false, error: `write-failed: ${e instanceof Error ? e.message : "unknown"}` };
   }
   return { ok: true };
 }

@@ -141,6 +141,7 @@ export default function SearchPage() {
       runSearch(query.trim());
     }, 400);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
   // Client-side filtering with live query matching
@@ -192,6 +193,7 @@ export default function SearchPage() {
     const el = loaderRef.current;
     if (el) observer.observe(el);
     return () => { if (el) observer.unobserve(el); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, loading, reachedEnd, scannedPages]);
 
   const activeFilterCount =
@@ -202,19 +204,18 @@ export default function SearchPage() {
     (filters.requireAttachments ? 1 : 0);
 
   const scannedCount = pool.length;
-  const hasMore = !reachedEnd && scannedPages < MAX_AUTO_PAGES;
 
   const togglePlatform = (p: ServiceType) => {
     setFilters((f) => {
       const n = new Set(f.platforms);
-      n.has(p) ? n.delete(p) : n.add(p);
+      if (n.has(p)) n.delete(p); else n.add(p);
       return { ...f, platforms: n };
     });
   };
   const toggleFileType = (t: string) => {
     setFilters((f) => {
       const n = new Set(f.fileTypes);
-      n.has(t) ? n.delete(t) : n.add(t);
+      if (n.has(t)) n.delete(t); else n.add(t);
       return { ...f, fileTypes: n };
     });
   };
@@ -293,7 +294,7 @@ export default function SearchPage() {
               {searched && (
                 <div className="mica mb-4 rounded-xl border border-white/5 px-4 py-2 text-[11px] text-text-tertiary">
                   {t("search.caveat")}{" "}
-                  {t("search.scanned", { count: scannedCount.toLocaleString() })}
+                  {t("search.scanned", { count: scannedCount.toLocaleString("en-US") })}
                   {reachedEnd && ` ${t("search.scanned.all")}`}
                 </div>
               )}
@@ -315,7 +316,7 @@ export default function SearchPage() {
               {!loading && searched && filtered.length === 0 && query.trim() && (
                 <div className="glass rounded-2xl p-12 text-center">
                   <p className="text-text-secondary">
-                    {t("search.noMatch", { query, total: scannedCount.toLocaleString() })}
+                    {t("search.noMatch", { query, total: scannedCount.toLocaleString("en-US") })}
                   </p>
                   {activeFilterCount > 0 && (
                     <p className="mt-1 text-xs text-text-tertiary">
@@ -337,8 +338,8 @@ export default function SearchPage() {
                 <div className="space-y-2">
                   <p className="mb-3 text-xs text-text-tertiary">
                     {filtered.length === 1
-                      ? t("search.match", { count: filtered.length, total: scannedCount.toLocaleString() })
-                      : t("search.matches", { count: filtered.length, total: scannedCount.toLocaleString() })}
+                      ? t("search.match", { count: filtered.length, total: scannedCount.toLocaleString("en-US") })
+                      : t("search.matches", { count: filtered.length, total: scannedCount.toLocaleString("en-US") })}
                     {activeFilterCount > 0 && (
                       <span> · <button onClick={resetFilters} className="text-primary hover:underline">{t("common.clearFilters")}</button></span>
                     )}
@@ -370,7 +371,7 @@ export default function SearchPage() {
               {!loading && searched && !reachedEnd && scannedPages >= MAX_AUTO_PAGES && (
                 <div className="mt-6 text-center">
                   <p className="text-[11px] text-text-tertiary mb-2">
-                    {t("search.reachedCap", { total: (MAX_AUTO_PAGES * PAGE_SIZE).toLocaleString() })}
+                    {t("search.reachedCap", { total: (MAX_AUTO_PAGES * PAGE_SIZE).toLocaleString("en-US") })}
                   </p>
                   <button
                     onClick={() => { setScannedPages(0); setReachedEnd(false); scanMore(); }}
@@ -593,8 +594,8 @@ function SmartSearchPanel() {
       const data = await res.json();
       const posts = Array.isArray(data) ? data : Array.isArray(data?.results) ? data.results : [];
       setResults(posts as Post[]);
-    } catch (e: any) {
-      setErr(e?.message || "Search failed");
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Search failed");
     } finally {
       setLoading(false);
     }

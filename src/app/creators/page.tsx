@@ -33,8 +33,8 @@ export default function CreatorsPage() {
       try {
         const data = await getAllCreators();
         if (!cancelled) setCreators(data);
-      } catch (e: any) {
-        if (!cancelled) setError(e.message || "Unable to load creators.");
+      } catch (e: unknown) {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Unable to load creators.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -77,7 +77,7 @@ export default function CreatorsPage() {
   const togglePlatform = (p: ServiceType) => {
     setSelPlatforms((prev) => {
       const n = new Set(prev);
-      n.has(p) ? n.delete(p) : n.add(p);
+      if (n.has(p)) n.delete(p); else n.add(p);
       return n;
     });
   };
@@ -98,7 +98,7 @@ export default function CreatorsPage() {
             <h1 className="font-display text-3xl font-bold">{t("creators.title")}</h1>
             <p className="mt-1 text-sm text-text-secondary">
               {creators.length > 0
-                ? t("creators.subtitleCount", { filtered: filtered.length.toLocaleString(), total: creators.length.toLocaleString() })
+                ? t("creators.subtitleCount", { filtered: filtered.length.toLocaleString("en-US"), total: creators.length.toLocaleString("en-US") })
                 : t("creators.subtitleEmpty")}
             </p>
           </div>
@@ -244,13 +244,13 @@ export default function CreatorsPage() {
                   onClick={() => setVisible((v) => v + PAGE_SIZE)}
                   className="rounded-xl bg-surface-2 px-6 py-3 text-sm font-medium text-text-secondary transition-all hover:bg-surface-3 hover:text-text-primary"
                 >
-                  {t("common.showMore")} ({Math.min(PAGE_SIZE, filtered.length - visible).toLocaleString()}/{(filtered.length - visible).toLocaleString()})
+                  {t("common.showMore")} ({Math.min(PAGE_SIZE, filtered.length - visible).toLocaleString("en-US")}/{(filtered.length - visible).toLocaleString("en-US")})
                 </button>
               </div>
             )}
             {!hasMore && filtered.length > 0 && (
               <p className="mt-6 text-center text-xs text-text-tertiary">
-                {t("creators.allShown", { count: filtered.length.toLocaleString() })}
+                {t("creators.allShown", { count: filtered.length.toLocaleString("en-US") })}
               </p>
             )}
           </>

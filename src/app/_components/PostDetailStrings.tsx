@@ -11,7 +11,7 @@ export function PostDetailStrings({
 }) {
   const { t } = useI18n();
   const key = MAP[which];
-  return <>{t(key as any, vars)}</>;
+  return <>{t(key, vars)}</>;
 }
 
 const MAP = {

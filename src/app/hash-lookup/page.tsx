@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { searchFileByHash, getFileUrl, getThumbUrl, getServiceColor, getServiceLabel } from "@/lib/api";
+import { searchFileByHash, getThumbUrl, getServiceColor, getServiceLabel } from "@/lib/api";
 import type { FileHashResult } from "@/lib/types";
-import { formatDate, formatFileSize, cn } from "@/lib/utils";
+import { formatDate, formatFileSize } from "@/lib/utils";
 import { SiteNav } from "@/app/_components/SiteNav";
 import { useI18n } from "@/lib/i18n/provider";
 

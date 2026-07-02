@@ -93,8 +93,8 @@ export function TranslateBox({ html, plain: plainProp, compact }: Props) {
         const r = await translateText(plain, locale, (p) => setProgress(p));
         setResult(r);
         setShowTrans(true);
-      } catch (e: any) {
-        setErr(e?.message || t("post.translate.failed"));
+      } catch (e: unknown) {
+        setErr(e instanceof Error ? e.message : t("post.translate.failed"));
       } finally {
         setProgress(null);
       }

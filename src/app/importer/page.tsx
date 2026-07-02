@@ -91,8 +91,8 @@ export default function ImporterPage() {
         setMsg({ ok: false, text });
         recordImporterSubmission({ service, ok: false, autoImport, saveKey, message: text.slice(0, 200) });
       }
-    } catch (e: any) {
-      const text = e?.message || t("importer.failed");
+    } catch (e: unknown) {
+      const text = e instanceof Error ? e.message : t("importer.failed");
       setMsg({ ok: false, text });
       recordImporterSubmission({ service, ok: false, autoImport, saveKey, message: text.slice(0, 200) });
     } finally {
@@ -286,7 +286,7 @@ export default function ImporterPage() {
                     {h.message || (h.autoImport ? "auto-import" : "manual")}
                   </span>
                   <span className="text-[10px] text-text-tertiary font-mono">
-                    {new Date(h.ts).toLocaleString()}
+                    {new Date(h.ts).toLocaleString("en-US")}
                   </span>
                 </li>
               ))}

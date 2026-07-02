@@ -54,8 +54,8 @@ export async function POST(req: NextRequest) {
   let upstreamUrl: string;
   try {
     upstreamUrl = buildUrl(config.translationBaseUrl, config.translationApiKey);
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? "invalid-config" }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "invalid-config" }, { status: 500 });
   }
 
   try {
@@ -73,12 +73,12 @@ export async function POST(req: NextRequest) {
       const obj = json as Record<string, unknown>;
       if (typeof obj.data === "string") return NextResponse.json({ data: obj.data });
       if (typeof obj.translated_text === "string") return NextResponse.json({ data: obj.translated_text });
-      if (Array.isArray(obj.alternatives) && typeof (obj.alternatives as any[])[0] === "string") {
+      if (Array.isArray(obj.alternatives) && typeof (obj.alternatives as unknown[])[0] === "string") {
         return NextResponse.json({ data: (obj.alternatives as string[])[0] });
       }
     }
     return NextResponse.json({ error: "unexpected-response" }, { status: 502 });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? "network" }, { status: 502 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "network" }, { status: 502 });
   }
 }

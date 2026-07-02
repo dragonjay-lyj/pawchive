@@ -68,8 +68,8 @@ export function SiteConfigForm({ admin }: Props) {
       setSaved(true);
       window.dispatchEvent(new CustomEvent("pawchive:site-config-change"));
       setTimeout(() => setSaved(false), 3000);
-    } catch (e: any) {
-      setErr(e?.message ?? "network");
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "network");
     } finally {
       setSaving(false);
     }
@@ -87,8 +87,8 @@ export function SiteConfigForm({ admin }: Props) {
       // fall back to a placeholder that doesn't leak the stored key.
       const keyForPreview = apiKey || (config?.hasTranslationApiKey ? "***" : "");
       return buildDeepLXUrl(baseUrl, keyForPreview);
-    } catch (e: any) {
-      return e?.message ?? "invalid";
+    } catch (e: unknown) {
+      return e instanceof Error ? e.message : "invalid";
     }
   })();
 

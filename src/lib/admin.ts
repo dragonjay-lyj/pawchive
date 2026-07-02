@@ -79,8 +79,8 @@ export async function changeAdminPassword(
       return { ok: false, error: json?.error ?? `status-${res.status}` };
     }
     return { ok: true, user: json.user };
-  } catch (e: any) {
-    return { ok: false, error: e?.message ?? "network" };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "network" };
   }
 }
 

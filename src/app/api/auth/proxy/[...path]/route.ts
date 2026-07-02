@@ -155,7 +155,7 @@ function rewriteUrl(url: string | null): string {
   return `${PROXY_PREFIX}${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
-function rewriteHtml(html: string, proxyBase: string): string {
+function rewriteHtml(html: string, _proxyBase: string): string {
   let result = html;
 
   // Inject a script to detect login success and notify parent

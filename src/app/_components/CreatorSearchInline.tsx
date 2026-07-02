@@ -26,8 +26,8 @@ export function CreatorSearchInline() {
       try {
         const data = await getAllCreators();
         if (!cancelled) setCreators(data);
-      } catch (e: any) {
-        if (!cancelled) setErr(e.message || "Failed to load creator index.");
+      } catch (e: unknown) {
+        if (!cancelled) setErr(e instanceof Error ? e.message : "Failed to load creator index.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -49,7 +49,7 @@ export function CreatorSearchInline() {
   const togglePlatform = (p: ServiceType) => {
     setSel((prev) => {
       const n = new Set(prev);
-      n.has(p) ? n.delete(p) : n.add(p);
+      if (n.has(p)) n.delete(p); else n.add(p);
       return n;
     });
   };
@@ -111,9 +111,9 @@ export function CreatorSearchInline() {
       {!loading && !err && (
         <>
           <p className="text-[11px] text-text-tertiary">
-            {total.toLocaleString()} creator{total === 1 ? "" : "s"}
+            {total.toLocaleString("en-US")} creator{total === 1 ? "" : "s"}
             {creators.length !== total && (
-              <span> of {creators.length.toLocaleString()} indexed</span>
+              <span> of {creators.length.toLocaleString("en-US")} indexed</span>
             )}
             {" · sorted by favorites"}
           </p>
@@ -164,7 +164,7 @@ export function CreatorSearchInline() {
                 onClick={() => setShowMore(true)}
                 className="rounded-xl bg-surface-2 px-4 py-2 text-xs font-medium text-text-secondary hover:bg-surface-3 hover:text-text-primary"
               >
-                Show all {total.toLocaleString()}
+                Show all {total.toLocaleString("en-US")}
               </button>
             </div>
           )}

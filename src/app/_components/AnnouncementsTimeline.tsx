@@ -37,7 +37,7 @@ function groupByMonth(items: Announcement[]): Group[] {
 }
 
 export function AnnouncementsTimeline({ announcements }: Props) {
-  const { t, locale } = useI18n();
+  const { locale } = useI18n();
   const groups = useMemo(() => groupByMonth(announcements), [announcements]);
   const currentKey = groups[0]?.key;
   const [openKeys, setOpenKeys] = useState<Set<string>>(() => new Set(currentKey ? [currentKey] : []));
@@ -45,7 +45,7 @@ export function AnnouncementsTimeline({ announcements }: Props) {
   const toggle = (key: string) => {
     setOpenKeys((prev) => {
       const n = new Set(prev);
-      n.has(key) ? n.delete(key) : n.add(key);
+      if (n.has(key)) n.delete(key); else n.add(key);
       return n;
     });
   };

@@ -4,14 +4,13 @@ import {
   getPost,
   getPostComments,
   getPostRevisions,
-  getThumbnailUrl,
   getThumbUrl,
   getServiceColor,
   getServiceLabel,
   getFileUrl,
 } from "@/lib/api";
 import type { Comment, FileAttachment, PostRevision } from "@/lib/types";
-import { formatDate, formatRelativeDate, formatFileSize, stripHtml, cn } from "@/lib/utils";
+import { formatDate, formatRelativeDate, stripHtml } from "@/lib/utils";
 import { FavoriteButton } from "@/app/_components/FavoriteButton";
 import { FlagButton } from "@/app/_components/FlagButton";
 import { RelatedFromCreator } from "@/app/_components/RelatedFromCreator";
@@ -88,7 +87,6 @@ export default async function PostDetailPage({ params }: { params: Params }) {
   }
 
   const color = getServiceColor(post.service);
-  const mainImage = getThumbnailUrl(post);
   const allImages: FileAttachment[] = [
     ...(post.file?.path ? [post.file] : []),
     ...post.attachments,

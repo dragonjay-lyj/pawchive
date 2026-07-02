@@ -21,5 +21,5 @@ export function CreatorStrings({
   vars?: Record<string, string | number>;
 }) {
   const { t } = useI18n();
-  return <>{t(MAP[which] as any, vars)}</>;
+  return <>{t(MAP[which], vars)}</>;
 }
