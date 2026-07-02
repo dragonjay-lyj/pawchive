@@ -7,7 +7,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pat
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) { return proxyRequest(req, await params); }
 
 export async function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Cookie', 'Access-Control-Max-Age': '86400' } });
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Cookie, X-Pawchive-Session',
+      'Access-Control-Max-Age': '86400',
+    },
+  });
 }
 
 async function proxyRequest(req: NextRequest, params: { path: string[] }): Promise<NextResponse> {
@@ -25,6 +33,8 @@ async function proxyRequest(req: NextRequest, params: { path: string[] }): Promi
     forwardHeaders.set(k, v);
   });
   forwardHeaders.set('Host', 'pawchive.st');
+  forwardHeaders.set('Origin', 'https://pawchive.st');
+  forwardHeaders.set('Referer', 'https://pawchive.st/');
 
   // Merge browser cookies with client-provided session (localStorage) so
   // that the upstream `session=…` cookie is set even though browsers
