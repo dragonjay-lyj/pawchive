@@ -7,8 +7,8 @@ import { loadPrefs, savePrefs, DEFAULT_PREFS, type Preferences, type Theme, type
 import { useI18n } from "@/lib/i18n/provider";
 import { LOCALES, type Locale } from "@/lib/i18n/dict";
 import { isAdmin, refreshAdminStatus, tryAdminLogin, adminLogout, changeAdminPassword } from "@/lib/admin";
-import { buildDeepLXUrl } from "@/lib/translate";
 import { TranslationHistoryPanel } from "@/app/_components/TranslationHistoryPanel";
+import { SiteConfigForm } from "@/app/_components/SiteConfigForm";
 
 // ============================================================
 // Settings Page — Fluent Design 2 segmented layout
@@ -475,7 +475,7 @@ export default function SettingsPage() {
               </div>
             </section>
 
-            {/* ========== TRANSLATION (DeepLX) ========== */}
+            {/* ========== TRANSLATION & AI SEARCH (server-side, admin-gated) ========== */}
             <section id="translation">
               <div className="flex items-center gap-3 mb-4">
                 <h2 className="font-display text-xl">{t("settings.translation.title")}</h2>
@@ -485,86 +485,8 @@ export default function SettingsPage() {
                   </span>
                 )}
               </div>
-              <div className={cn("glass rounded-2xl p-5 space-y-4", !admin && "opacity-70")}>
-                {!admin && (
-                  <p className="text-xs text-text-tertiary">
-                    {t("settings.translation.readOnly")}{" "}
-                    <a href="#admin" className="text-primary hover:underline">
-                      {t("settings.admin.signIn")} →
-                    </a>
-                  </p>
-                )}
-                <div>
-                  <label className="block text-sm font-medium">
-                    {t("settings.translation.baseUrlLabel")}
-                  </label>
-                  <p className="mt-1 text-xs text-text-tertiary">
-                    {t("settings.translation.baseUrlHint")}
-                  </p>
-                  <input
-                    type="url"
-                    value={prefs.translationBaseUrl}
-                    onChange={(e) => patchPrefs("translationBaseUrl", e.target.value)}
-                    disabled={!admin}
-                    placeholder="https://api.deeplx.org/{{apiKey}}/translate"
-                    className="mt-2 w-full rounded-xl border border-white/5 bg-surface-2 px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-tertiary focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:cursor-not-allowed"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium">
-                    {t("settings.translation.apiKeyLabel")}
-                  </label>
-                  <p className="mt-1 text-xs text-text-tertiary">
-                    {t("settings.translation.apiKeyHint")}
-                  </p>
-                  <input
-                    type="password"
-                    value={prefs.translationApiKey}
-                    onChange={(e) => patchPrefs("translationApiKey", e.target.value)}
-                    disabled={!admin}
-                    placeholder="admin"
-                    className="mt-2 w-full rounded-xl border border-white/5 bg-surface-2 px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-tertiary focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:cursor-not-allowed"
-                  />
-                </div>
-                {prefs.translationBaseUrl && (
-                  <div className="pt-3 border-t border-white/5">
-                    <p className="text-[11px] text-text-tertiary mb-1">{t("settings.translation.preview")}</p>
-                    <code className="block break-all rounded-md bg-surface-2 px-2 py-1 text-[11px] font-mono text-text-secondary">
-                      {(() => {
-                        try {
-                          return buildDeepLXUrl(prefs.translationBaseUrl, prefs.translationApiKey);
-                        } catch (e: any) {
-                          return e?.message ?? "invalid";
-                        }
-                      })()}
-                    </code>
-                  </div>
-                )}
-                {admin && (
-                  <div className="pt-3 border-t border-white/5">
-                    <p className="text-[11px] text-text-tertiary mb-2">{t("settings.translation.presetTitle")}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        { label: "api.deeplx.org (path token)", url: "https://api.deeplx.org", key: "admin" },
-                        { label: "deeplx.vercel.app (free)", url: "https://deeplx.vercel.app", key: "" },
-                        { label: "custom {{apiKey}}", url: "https://api.deeplx.example/{{apiKey}}/translate", key: "" },
-                      ].map((p) => (
-                        <button
-                          key={p.url}
-                          type="button"
-                          onClick={() => {
-                            const next = { ...prefs, translationBaseUrl: p.url, translationApiKey: p.key };
-                            setPrefs(next);
-                            savePrefs(next);
-                          }}
-                          className="rounded-full border border-white/10 bg-surface-2 px-3 py-1 text-[11px] text-text-secondary hover:border-primary/40 hover:text-primary"
-                        >
-                          {p.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+              <div className="glass rounded-2xl p-5">
+                <SiteConfigForm admin={admin} />
               </div>
 
               <div className="mt-4">
@@ -572,33 +494,12 @@ export default function SettingsPage() {
               </div>
             </section>
 
-            {/* ========== AI ========== */}
+            {/* ========== AI content preferences (per-user) ========== */}
             <section id="ai">
               <div className="flex items-center gap-3 mb-4">
                 <h2 className="font-display text-xl">{t("settings.ai.title")}</h2>
-                {!admin && (
-                  <span className="rounded-full border border-white/10 bg-surface-2 px-2 py-0.5 text-[10px] font-medium text-text-tertiary">
-                    🔒 {t("settings.translation.locked")}
-                  </span>
-                )}
               </div>
-              <div className={cn("glass rounded-2xl p-5 space-y-4", !admin && "opacity-70")}>
-                <div>
-                  <label className="block text-sm font-medium">
-                    {t("settings.ai.endpointLabel")}
-                  </label>
-                  <p className="mt-1 text-xs text-text-tertiary">
-                    {t("settings.ai.endpointHint")}
-                  </p>
-                  <input
-                    type="url"
-                    value={prefs.aiSearchEndpoint}
-                    onChange={(e) => patchPrefs("aiSearchEndpoint", e.target.value)}
-                    disabled={!admin}
-                    placeholder="https://your-service.example/search"
-                    className="mt-2 w-full rounded-xl border border-white/5 bg-surface-2 px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-tertiary focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:cursor-not-allowed"
-                  />
-                </div>
+              <div className="glass rounded-2xl p-5 space-y-4">
                 <ToggleRow
                   label={t("settings.ai.translate")}
                   description={t("settings.ai.translate.desc")}

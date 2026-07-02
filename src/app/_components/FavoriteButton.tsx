@@ -29,12 +29,14 @@ export function FavoriteButton({ kind, service, creatorId, postId, className }: 
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
-    const session = getSessionCookie();
-    setAuthed(!!session);
-    if (!session) { setFav(false); return; }
-
     let cancelled = false;
-    (async () => {
+
+    const load = async () => {
+      const session = getSessionCookie();
+      if (cancelled) return;
+      setAuthed(!!session);
+      if (!session) { setFav(false); return; }
+      setFav(null);
       try {
         const list = await getAccountFavorites(kind === "post" ? "post" : "artist");
         if (cancelled) return;
@@ -45,13 +47,25 @@ export function FavoriteButton({ kind, service, creatorId, postId, className }: 
         });
         setFav(match);
       } catch (e) {
-        if (!cancelled) {
-          if (e instanceof AuthError) setAuthed(false);
-          setFav(false);
-        }
+        if (cancelled) return;
+        if (e instanceof AuthError) setAuthed(false);
+        setFav(false);
       }
-    })();
-    return () => { cancelled = true; };
+    };
+
+    void load();
+
+    const onSessionChange = () => { void load(); };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "pawchive_session") void load();
+    };
+    window.addEventListener("pawchive:session-change", onSessionChange);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("pawchive:session-change", onSessionChange);
+      window.removeEventListener("storage", onStorage);
+    };
   }, [kind, service, creatorId, postId]);
 
   const toggle = () => {

@@ -56,6 +56,7 @@ export function setSessionCookie(cookie: string | null) {
       if (cookie) localStorage.setItem("pawchive_session", cookie);
       else localStorage.removeItem("pawchive_session");
     } catch {}
+    try { window.dispatchEvent(new CustomEvent("pawchive:session-change", { detail: !!cookie })); } catch {}
   }
 }
 
@@ -98,8 +99,12 @@ async function fetchAuth<T>(
     ...(options.headers as Record<string, string>),
   };
 
-  if (_sessionCookie) {
-    headers["Cookie"] = `session=${_sessionCookie}`;
+  // Browsers strip a client-set `Cookie` header. Send the session via a
+  // custom header instead; the /api/proxy route translates it into the
+  // upstream `Cookie: session=…` on the server side.
+  const session = getSessionCookie();
+  if (session) {
+    headers["X-Pawchive-Session"] = session;
   }
 
   const res = await fetch(url, {

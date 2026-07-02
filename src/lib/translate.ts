@@ -4,7 +4,6 @@
 // Results are cached in localStorage to save API quota.
 // ============================================================
 
-import { loadPrefs } from "./preferences";
 
 const CACHE_KEY = "pawchive_translate_cache";
 const MAX_CHUNK = 4500; // DeepL limit is ~5000 chars per request
@@ -115,8 +114,8 @@ function chunkText(text: string): string[] {
   return parts;
 }
 
-async function translateChunk(url: string, text: string, target: TargetLang, source?: string): Promise<string> {
-  const res = await fetch(url, {
+async function translateChunk(text: string, target: TargetLang, source?: string): Promise<string> {
+  const res = await fetch("/api/translate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -125,18 +124,14 @@ async function translateChunk(url: string, text: string, target: TargetLang, sou
       target_lang: LANG_TAG[target],
     }),
   });
-  if (!res.ok) throw new Error(`DeepLX ${res.status}`);
-  const json: unknown = await res.json();
-  // DeepLX responses have varied over versions; try common shapes.
-  if (typeof json === "object" && json) {
-    const obj = json as Record<string, unknown>;
-    if (typeof obj.data === "string") return obj.data;
-    if (typeof obj.translated_text === "string") return obj.translated_text;
-    if (Array.isArray(obj.alternatives) && typeof (obj.alternatives as any[])[0] === "string") {
-      return (obj.alternatives as string[])[0];
-    }
+  if (!res.ok) {
+    if (res.status === 503) throw new Error("Translation is not configured yet — ask an admin.");
+    const err = await res.json().catch(() => null);
+    throw new Error(err?.error ? `${err.error}${err.detail ? `: ${err.detail}` : ""}` : `HTTP ${res.status}`);
   }
-  throw new Error("DeepLX returned unexpected response format");
+  const json = await res.json();
+  if (typeof json?.data === "string") return json.data;
+  throw new Error("Empty translation response");
 }
 
 export interface TranslateResult {
@@ -165,18 +160,12 @@ export async function translateText(
     return { text: cache[key].translated, engine: "DeepLX (cached)", cached: true };
   }
 
-  const prefs = loadPrefs();
-  if (!prefs.translationBaseUrl) {
-    throw new Error("DeepLX base URL not configured — ask an admin to set it in Settings.");
-  }
-  const url = buildDeepLXUrl(prefs.translationBaseUrl, prefs.translationApiKey);
-
   const chunks = chunkText(trimmed);
   const total = chunks.length;
   const parts: string[] = [];
   onProgress?.({ done: 0, total });
   for (let i = 0; i < chunks.length; i++) {
-    parts.push(await translateChunk(url, chunks[i], target));
+    parts.push(await translateChunk(chunks[i], target));
     onProgress?.({ done: i + 1, total });
   }
   const joined = parts.join("");

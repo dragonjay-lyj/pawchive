@@ -45,32 +45,51 @@ export default function FavoritesPage() {
   }, []);
 
   useEffect(() => {
-    const session = getSessionCookie();
-    setAuthed(!!session);
-    if (!session) { setLoading(false); return; }
-
     let cancelled = false;
-    (async () => {
+
+    const load = async () => {
+      const session = getSessionCookie();
+      if (cancelled) return;
+      setAuthed(!!session);
+      setError(null);
+      if (!session) {
+        setArtists([]);
+        setPosts([]);
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       try {
         const [a, p] = await Promise.allSettled([
           getAccountFavorites("artist"),
           getAccountFavorites("post"),
         ]);
-        if (!cancelled) {
-          if (a.status === "fulfilled") setArtists(a.value);
-          if (p.status === "fulfilled") setPosts(p.value);
-          if (a.status === "rejected" && p.status === "rejected") {
-            setError("Unable to load favorites. Check your session in Settings.");
-          }
+        if (cancelled) return;
+        if (a.status === "fulfilled") setArtists(a.value); else setArtists([]);
+        if (p.status === "fulfilled") setPosts(p.value); else setPosts([]);
+        if (a.status === "rejected" && p.status === "rejected") {
+          setError("Unable to load favorites. Check your session in Settings.");
         }
       } catch {
         if (!cancelled) setError("Failed to load favorites.");
       } finally {
         if (!cancelled) setLoading(false);
       }
-    })();
-    return () => { cancelled = true; };
+    };
+
+    void load();
+
+    const onSessionChange = () => { void load(); };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "pawchive_session") void load();
+    };
+    window.addEventListener("pawchive:session-change", onSessionChange);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("pawchive:session-change", onSessionChange);
+      window.removeEventListener("storage", onStorage);
+    };
   }, []);
 
   return (

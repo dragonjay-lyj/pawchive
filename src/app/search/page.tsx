@@ -7,7 +7,6 @@ import type { Post, ServiceType } from "@/lib/types";
 import { formatRelativeDate } from "@/lib/utils";
 import { CreatorSearchInline } from "@/app/_components/CreatorSearchInline";
 import { useI18n } from "@/lib/i18n/provider";
-import { loadPrefs } from "@/lib/preferences";
 import { SiteNav } from "@/app/_components/SiteNav";
 
 // ============================================================
@@ -536,7 +535,26 @@ function SmartSearchPanel() {
   const [results, setResults] = useState<Post[] | null>(null);
 
   useEffect(() => {
-    setEndpoint(loadPrefs().aiSearchEndpoint || "");
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/site-config", { cache: "no-store" });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!cancelled) setEndpoint(json?.aiSearchEndpoint || "");
+      } catch {}
+    })();
+    const on = () => {
+      fetch("/api/site-config", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((j) => setEndpoint(j?.aiSearchEndpoint || ""))
+        .catch(() => {});
+    };
+    window.addEventListener("pawchive:site-config-change", on);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("pawchive:site-config-change", on);
+    };
   }, []);
 
   const onImage = (file: File | null) => {

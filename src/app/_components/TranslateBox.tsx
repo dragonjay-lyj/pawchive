@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { loadPrefs } from "@/lib/preferences";
 import {
@@ -17,9 +17,27 @@ interface Props {
   compact?: boolean;
 }
 
+// Single shared probe of the server config, so we don't hammer the endpoint
+// once per comment on a post with many comments.
+let translationConfiguredCache: boolean | null = null;
+async function isTranslationConfigured(): Promise<boolean> {
+  if (translationConfiguredCache !== null) return translationConfiguredCache;
+  try {
+    const res = await fetch("/api/site-config", { cache: "no-store" });
+    if (!res.ok) { translationConfiguredCache = false; return false; }
+    const json = await res.json();
+    translationConfiguredCache = !!json?.translationBaseUrl;
+    return translationConfiguredCache;
+  } catch {
+    translationConfiguredCache = false;
+    return false;
+  }
+}
+
 export function TranslateBox({ html, plain: plainProp, compact }: Props) {
   const { t, locale } = useI18n();
-  const [prefs, setPrefs] = useState(() => loadPrefs());
+  const [autoTranslate] = useState<boolean>(() => loadPrefs().autoTranslate);
+  const [configured, setConfigured] = useState<boolean | null>(null);
   const [showTrans, setShowTrans] = useState(false);
   const [result, setResult] = useState<TranslateResult | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -32,25 +50,28 @@ export function TranslateBox({ html, plain: plainProp, compact }: Props) {
   }, [html, plainProp]);
   const sourceLang = useMemo(() => detectLangHeuristic(plain), [plain]);
 
-  // Re-read prefs when they change (e.g. admin updates endpoint)
-  useMemo(() => {
-    const on = () => setPrefs(loadPrefs());
-    if (typeof window !== "undefined") {
-      window.addEventListener("pawchive:prefs-change", on);
-    }
+  // Probe server config once; refresh when admin toggles it via event bus.
+  useEffect(() => {
+    let cancelled = false;
+    isTranslationConfigured().then((v) => { if (!cancelled) setConfigured(v); });
+    const on = () => {
+      translationConfiguredCache = null;
+      isTranslationConfigured().then((v) => { if (!cancelled) setConfigured(v); });
+    };
+    window.addEventListener("pawchive:site-config-change", on);
     return () => {
-      if (typeof window !== "undefined") window.removeEventListener("pawchive:prefs-change", on);
+      cancelled = true;
+      window.removeEventListener("pawchive:site-config-change", on);
     };
   }, []);
 
   // Skip translate button if content already in interface language,
-  // if the user turned it off, or if no endpoint has been configured.
+  // user disabled auto-translate, or server has no endpoint configured.
   const sameLang =
     (locale === "zh" && sourceLang === "zh") ||
     (locale === "en" && sourceLang === "en") ||
     plain.length < 10;
-  const noEndpoint = !prefs.translationBaseUrl.trim();
-  if (sameLang || !prefs.autoTranslate || noEndpoint) {
+  if (sameLang || !autoTranslate || configured === false) {
     return plainProp !== undefined ? (
       <p className="text-sm text-text-primary leading-relaxed break-words whitespace-pre-wrap">
         {plainProp}
