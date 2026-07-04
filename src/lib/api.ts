@@ -21,7 +21,7 @@ import type {
 // Client-side: use proxy route (avoids CORS)
 const API_BASE =
   typeof window === "undefined"
-    ? "https://pawchive.st/api/v1"
+    ? "https://pawchive.pw/api/v1"
     : "/api/proxy/v1";
 const CACHE_TTL = 60_000;
 
@@ -365,20 +365,20 @@ export function getThumbnailUrl(post: Post): string {
 
 export function getThumbUrl(path: string): string {
   if (!path) return "/placeholder.jpg";
-  return `https://img.pawchive.st/thumbnail/data${path}`;
+  return `https://img.pawchive.pw/thumbnail/data${path}`;
 }
 
 export function getFileUrl(path: string): string {
   if (!path) return "/placeholder.jpg";
-  return `https://file.pawchive.st/data${path}`;
+  return `https://file.pawchive.pw/data${path}`;
 }
 
 export function getCreatorAvatarUrl(service: string, creatorId: string): string {
-  return `https://pawchive.st/icons/${service}/${creatorId}`;
+  return `https://pawchive.pw/icons/${service}/${creatorId}`;
 }
 
 export function getCreatorBannerUrl(service: string, creatorId: string): string {
-  return `https://pawchive.st/banners/${service}/${creatorId}`;
+  return `https://pawchive.pw/banners/${service}/${creatorId}`;
 }
 
 export function getPostCoverUrl(post: Post): string {

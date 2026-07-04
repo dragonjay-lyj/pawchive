@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 // and rewrites HTML to keep relative URLs working through proxy.
 // ============================================================
 
-const TARGET = "https://pawchive.st";
+const TARGET = "https://pawchive.pw";
 const PROXY_PREFIX = "/api/auth/proxy";
 
 export async function GET(
@@ -41,9 +41,9 @@ async function proxyRequest(
     if (lower === "host" || lower === "origin" || lower === "referer") return;
     forwardHeaders.set(key, value);
   });
-  forwardHeaders.set("Host", "pawchive.st");
-  forwardHeaders.set("Origin", "https://pawchive.st");
-  forwardHeaders.set("Referer", "https://pawchive.st/");
+  forwardHeaders.set("Host", "pawchive.pw");
+  forwardHeaders.set("Origin", "https://pawchive.pw");
+  forwardHeaders.set("Referer", "https://pawchive.pw/");
 
   // Read body for POST
   let body: string | undefined;
@@ -145,8 +145,8 @@ function copySetCookie(from: Response, to: NextResponse) {
 function rewriteUrl(url: string | null): string {
   if (!url) return "/";
   // Absolute pawchive.st URL → proxy URL
-  if (url.startsWith("https://pawchive.st")) {
-    return PROXY_PREFIX + url.slice("https://pawchive.st".length);
+  if (url.startsWith("https://pawchive.pw")) {
+    return PROXY_PREFIX + url.slice("https://pawchive.pw".length);
   }
   if (url.startsWith("http://") || url.startsWith("https://")) {
     return url; // external, leave as-is
@@ -182,7 +182,7 @@ function rewriteHtml(html: string, _proxyBase: string): string {
 
   // Rewrite absolute pawchive.st URLs to go through proxy
   result = result.replace(
-    /(href|src|action|content)="https:\/\/pawchive\.st(\/[^"]*)"/gi,
+    /(href|src|action|content)="https:\/\/pawchive\.pw(\/[^"]*)"/gi,
     (_, attr, path) => `${attr}="${PROXY_PREFIX}${path}"`
   );
 

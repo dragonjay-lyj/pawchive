@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const TARGET = 'https://pawchive.st/api';
+const TARGET = 'https://pawchive.pw/api';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) { return proxyRequest(req, await params); }
 export async function POST(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) { return proxyRequest(req, await params); }
@@ -32,9 +32,9 @@ async function proxyRequest(req: NextRequest, params: { path: string[] }): Promi
     if (lo === 'x-pawchive-session') return; // internal, don't leak
     forwardHeaders.set(k, v);
   });
-  forwardHeaders.set('Host', 'pawchive.st');
-  forwardHeaders.set('Origin', 'https://pawchive.st');
-  forwardHeaders.set('Referer', 'https://pawchive.st/');
+  forwardHeaders.set('Host', 'pawchive.pw');
+  forwardHeaders.set('Origin', 'https://pawchive.pw');
+  forwardHeaders.set('Referer', 'https://pawchive.pw/');
 
   // Merge browser cookies with client-provided session (localStorage) so
   // that the upstream `session=…` cookie is set even though browsers
