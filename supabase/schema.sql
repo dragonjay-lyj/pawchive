@@ -155,3 +155,14 @@ ALTER TABLE site_config ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public read site_config"
   ON site_config FOR SELECT
   USING (true);
+
+-- Admin users can write site config (requires is_admin on profile)
+CREATE POLICY "Admin write site_config"
+  ON site_config FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.is_admin = true
+    )
+  );

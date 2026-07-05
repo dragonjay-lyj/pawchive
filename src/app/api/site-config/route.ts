@@ -42,6 +42,6 @@ export async function POST(req: NextRequest) {
   if (typeof body.translationApiKey === "string") patch.translationApiKey = body.translationApiKey;
   if (typeof body.aiSearchEndpoint === "string") patch.aiSearchEndpoint = body.aiSearchEndpoint.trim();
 
-  const next = await updateSiteConfig(patch);
+  const next = await updateSiteConfig(patch, supabase);
   return NextResponse.json({ ok: true, config: toPublicSiteConfig(next) });
 }

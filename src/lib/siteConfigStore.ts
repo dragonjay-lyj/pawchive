@@ -1,9 +1,11 @@
 // ============================================================
 // Server-side site config — stored in Supabase site_config table.
-// Admin writes via service_role client; everyone reads via anon.
+// Public read via anon client; admin write via authenticated user
+// (RLS policy checks profiles.is_admin).
 // ============================================================
 
 import { createClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface SiteConfig {
   translationBaseUrl: string;
@@ -22,12 +24,6 @@ function getAnonClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
-}
-
-function getServiceClient() {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!key) throw new Error("SUPABASE_SERVICE_ROLE_KEY not set");
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key);
 }
 
 export async function readSiteConfig(): Promise<SiteConfig> {
@@ -51,7 +47,7 @@ export async function readSiteConfig(): Promise<SiteConfig> {
   return { ...DEFAULT_SITE_CONFIG };
 }
 
-/** Return the shape that's safe to expose to unauthenticated clients. */
+/** Return the shape safe to expose to unauthenticated clients. */
 export function toPublicSiteConfig(c: SiteConfig) {
   return {
     translationBaseUrl: c.translationBaseUrl,
@@ -60,9 +56,14 @@ export function toPublicSiteConfig(c: SiteConfig) {
   };
 }
 
-export async function updateSiteConfig(patch: Partial<SiteConfig>): Promise<SiteConfig> {
-  const supabase = getServiceClient();
-
+/**
+ * Write site config via an authenticated admin Supabase client.
+ * RLS policy on site_config checks profiles.is_admin.
+ */
+export async function updateSiteConfig(
+  patch: Partial<SiteConfig>,
+  supabase: SupabaseClient
+): Promise<SiteConfig> {
   const row: Record<string, string> = { updated_at: new Date().toISOString() };
   if (typeof patch.translationBaseUrl === "string") row.translation_base_url = patch.translationBaseUrl;
   if (typeof patch.translationApiKey === "string") row.translation_api_key = patch.translationApiKey;
@@ -75,9 +76,7 @@ export async function updateSiteConfig(patch: Partial<SiteConfig>): Promise<Site
     .single();
 
   if (error || !data) {
-    // Fallback if Supabase is unavailable — return merged patch
-    const current = await readSiteConfig();
-    return { ...current, ...patch };
+    throw new Error(error?.message ?? "Failed to write site config");
   }
 
   return {
