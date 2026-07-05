@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { SiteFooter } from "./_components/SiteFooter";
 import { PrefsBoot } from "./_components/PrefsBoot";
+import { AuthProvider } from "@/lib/supabase/auth-provider";
 import { I18nProvider } from "@/lib/i18n/provider";
 import { detectLocaleFromRequest } from "@/lib/i18n/server";
 import { SITE_NAME, SITE_TAGLINE_EN, getSiteUrl } from "@/lib/site";
@@ -75,9 +76,11 @@ export default async function RootLayout({
     <html lang={locale} className="dark scroll-smooth">
       <body className="min-h-screen bg-surface-0 text-text-primary antialiased flex flex-col">
         <I18nProvider initial={locale}>
-          <PrefsBoot />
-          <div className="flex-1">{children}</div>
-          <SiteFooter />
+          <AuthProvider>
+            <PrefsBoot />
+            <div className="flex-1">{children}</div>
+            <SiteFooter />
+          </AuthProvider>
         </I18nProvider>
       </body>
     </html>
