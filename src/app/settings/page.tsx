@@ -6,7 +6,7 @@ import { setSessionCookie, getSessionCookie, getAppVersion } from "@/lib/api";
 import { loadPrefs, savePrefs, DEFAULT_PREFS, type Preferences, type Theme, type Rating } from "@/lib/preferences";
 import { useI18n } from "@/lib/i18n/provider";
 import { LOCALES, type Locale } from "@/lib/i18n/dict";
-import { isAdmin, refreshAdminStatus, tryAdminLogin, adminLogout, changeAdminPassword } from "@/lib/admin";
+import { isAdmin, refreshAdminStatus, adminLogout } from "@/lib/admin";
 import { TranslationHistoryPanel } from "@/app/_components/TranslationHistoryPanel";
 import { SiteConfigForm } from "@/app/_components/SiteConfigForm";
 import { SupabaseAuthPanel } from "@/app/_components/SupabaseAuthPanel";
@@ -47,9 +47,6 @@ export default function SettingsPage() {
   const [appVersion, setAppVersion] = useState<string | null>(null);
   const [prefs, setPrefs] = useState<Preferences>(DEFAULT_PREFS);
   const [admin, setAdmin] = useState(false);
-  const [adminUser, setAdminUser] = useState("");
-  const [adminPass, setAdminPass] = useState("");
-  const [adminErr, setAdminErr] = useState<string | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
@@ -69,20 +66,9 @@ export default function SettingsPage() {
     return () => window.removeEventListener("pawchive:admin-change", onChange);
   }, []);
 
-  const [adminLoading, setAdminLoading] = useState(false);
-  const doAdminLogin = async () => {
-    setAdminLoading(true);
-    setAdminErr(null);
-    const ok = await tryAdminLogin(adminUser, adminPass);
-    setAdminLoading(false);
-    if (ok) {
-      setAdminUser(""); setAdminPass("");
-    } else {
-      setAdminErr(t("settings.admin.wrong"));
-    }
-  };
   const doAdminLogout = async () => {
     await adminLogout();
+    setAdmin(false);
   };
 
   const patchPrefs = <K extends keyof Preferences>(key: K, value: Preferences[K]) => {
@@ -521,52 +507,24 @@ export default function SettingsPage() {
               <p className="mb-3 text-xs text-text-tertiary">{t("settings.admin.desc")}</p>
               <div className={cn("glass rounded-2xl p-5", admin && "ring-1 ring-primary/40")}>
                 {admin ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full bg-primary" />
-                        <p className="text-sm font-medium">{t("settings.admin.signedIn")}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={doAdminLogout}
-                        className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-text-secondary hover:bg-surface-2"
-                      >
-                        {t("settings.admin.signOut")}
-                      </button>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 rounded-full bg-primary" />
+                      <p className="text-sm font-medium">{t("settings.admin.signedIn")}</p>
                     </div>
-                    <AdminChangePasswordForm />
+                    <button
+                      type="button"
+                      onClick={doAdminLogout}
+                      className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-text-secondary hover:bg-surface-2"
+                    >
+                      {t("settings.admin.signOut")}
+                    </button>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      <input
-                        type="text"
-                        value={adminUser}
-                        onChange={(e) => setAdminUser(e.target.value)}
-                        placeholder={t("settings.admin.user")}
-                        className="rounded-xl border border-white/5 bg-surface-2 px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      />
-                      <input
-                        type="password"
-                        value={adminPass}
-                        onChange={(e) => setAdminPass(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && doAdminLogin()}
-                        placeholder={t("settings.admin.pass")}
-                        className="rounded-xl border border-white/5 bg-surface-2 px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      />
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={doAdminLogin}
-                        disabled={!adminUser || !adminPass || adminLoading}
-                        className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-on-primary disabled:opacity-40"
-                      >
-                        {adminLoading ? t("common.loading") : t("settings.admin.signIn")}
-                      </button>
-                      {adminErr && <span className="text-xs text-error">{adminErr}</span>}
-                    </div>
+                  <div className="text-center py-2">
+                    <p className="text-sm text-text-secondary">
+                      {t("settings.admin.signInHint")}
+                    </p>
                   </div>
                 )}
               </div>
@@ -664,104 +622,3 @@ function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(" ");
 }
 
-// ============================================================
-// Admin change-password form
-// ============================================================
-function AdminChangePasswordForm() {
-  const { t } = useI18n();
-  const [open, setOpen] = useState(false);
-  const [curPass, setCurPass] = useState("");
-  const [newUser, setNewUser] = useState("");
-  const [newPass, setNewPass] = useState("");
-  const [confirmPass, setConfirmPass] = useState("");
-  const [err, setErr] = useState<string | null>(null);
-  const [ok, setOk] = useState(false);
-  const [pending, setPending] = useState(false);
-
-  const reset = () => {
-    setCurPass(""); setNewUser(""); setNewPass(""); setConfirmPass("");
-    setErr(null); setOk(false);
-  };
-
-  const submit = async () => {
-    setErr(null); setOk(false);
-    if (newPass.length < 4) { setErr(t("settings.admin.passwordShort")); return; }
-    if (newPass !== confirmPass) { setErr(t("settings.admin.passwordMismatch")); return; }
-    setPending(true);
-    const res = await changeAdminPassword(curPass, newPass, newUser || undefined);
-    setPending(false);
-    if (res.ok) {
-      setOk(true);
-      setCurPass(""); setNewPass(""); setConfirmPass(""); setNewUser("");
-      setTimeout(() => setOk(false), 4000);
-    } else {
-      if (res.error === "current-password-wrong") setErr(t("settings.admin.currentWrong"));
-      else if (res.error === "new-password-too-short") setErr(t("settings.admin.passwordShort"));
-      else setErr(t("settings.admin.changeFailed", { error: res.error }));
-    }
-  };
-
-  return (
-    <div className="rounded-xl border border-white/10 bg-surface-2/40 p-4">
-      <button
-        type="button"
-        onClick={() => { setOpen((v) => !v); if (open) reset(); }}
-        className="flex w-full items-center justify-between text-sm font-medium text-text-primary"
-      >
-        <span>🔑 {t("settings.admin.change")}</span>
-        <span className={cn("text-text-tertiary transition-transform", open && "rotate-180")}>▾</span>
-      </button>
-      {open && (
-        <div className="mt-3 space-y-2.5">
-          <input
-            type="password"
-            value={curPass}
-            onChange={(e) => setCurPass(e.target.value)}
-            placeholder={t("settings.admin.currentPass")}
-            autoComplete="current-password"
-            className="w-full rounded-xl border border-white/5 bg-surface-2 px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
-          />
-          <input
-            type="text"
-            value={newUser}
-            onChange={(e) => setNewUser(e.target.value)}
-            placeholder={t("settings.admin.newUser")}
-            autoComplete="username"
-            className="w-full rounded-xl border border-white/5 bg-surface-2 px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
-          />
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <input
-              type="password"
-              value={newPass}
-              onChange={(e) => setNewPass(e.target.value)}
-              placeholder={t("settings.admin.newPass")}
-              autoComplete="new-password"
-              className="rounded-xl border border-white/5 bg-surface-2 px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
-            />
-            <input
-              type="password"
-              value={confirmPass}
-              onChange={(e) => setConfirmPass(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && submit()}
-              placeholder={t("settings.admin.newPassConfirm")}
-              autoComplete="new-password"
-              className="rounded-xl border border-white/5 bg-surface-2 px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
-            />
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={submit}
-              disabled={!curPass || !newPass || !confirmPass || pending}
-              className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-on-primary disabled:opacity-40"
-            >
-              {pending ? t("common.loading") : t("settings.admin.submitChange")}
-            </button>
-            {err && <span className="text-xs text-error">{err}</span>}
-            {ok && <span className="text-xs text-primary">{t("settings.admin.changed")}</span>}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}

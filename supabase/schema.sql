@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   id          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   username    TEXT,
   pawchive_session TEXT,          -- upstream pawchive.pw session cookie
+  is_admin    BOOLEAN NOT NULL DEFAULT false,
   avatar_url  TEXT,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
