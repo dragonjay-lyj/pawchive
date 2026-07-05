@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useI18n } from "@/lib/i18n/provider";
 
 interface Props {
-  active?: "browse" | "search" | "creators" | "favorites" | "settings" | null;
+  active?: "browse" | "search" | "creators" | "favorites" | "settings" | "manage" | null;
   showRightLinks?: boolean;
 }
 
@@ -23,8 +23,10 @@ export function SiteNav({ active, showRightLinks = true }: Props) {
             ? "creators"
             : pathname?.startsWith("/favorites")
               ? "favorites"
-              : pathname?.startsWith("/settings")
-                ? "settings"
+            : pathname?.startsWith("/settings")
+              ? "settings"
+              : pathname?.startsWith("/manage")
+                ? "manage"
                 : null;
 
   const linkCls = (key: string) =>
@@ -53,7 +55,8 @@ export function SiteNav({ active, showRightLinks = true }: Props) {
           </div>
         </div>
         {showRightLinks && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Link href="/manage" className={smallLinkCls("manage")}>{t("nav.manage")}</Link>
             <Link href="/favorites" className={smallLinkCls("favorites")}>{t("nav.favorites")}</Link>
             <Link href="/settings" className={smallLinkCls("settings")}>{t("nav.settings")}</Link>
           </div>

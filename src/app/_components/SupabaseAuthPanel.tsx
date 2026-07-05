@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useAuth } from "@/lib/supabase/auth-provider";
+import { useI18n } from "@/lib/i18n/provider";
 import { setSessionCookie } from "@/lib/api";
 
 export function SupabaseAuthPanel() {
+  const { t } = useI18n();
   const { user, loading, signUp, signIn, signOut } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,16 +31,16 @@ export function SupabaseAuthPanel() {
     if (result.error) {
       setMsg({ type: "err", text: result.error });
     } else if (mode === "register") {
-      setMsg({ type: "ok", text: "Check your email for a confirmation link." });
+      setMsg({ type: "ok", text: t("settings.account.checkEmail") });
     } else {
-      setMsg({ type: "ok", text: "Signed in!" });
+      setMsg({ type: "ok", text: t("settings.account.signedIn") });
     }
   };
 
   const handleSyncSession = async () => {
     const trimmed = sessionInput.trim();
     if (!trimmed) return;
-    setSessionMsg("Saving…");
+    setSessionMsg(t("settings.account.syncSaving"));
     try {
       const res = await fetch("/api/profile", {
         method: "PATCH",
@@ -47,19 +49,19 @@ export function SupabaseAuthPanel() {
       });
       if (res.ok) {
         setSessionCookie(trimmed);
-        setSessionMsg("Session synced to cloud ✓");
+        setSessionMsg(t("settings.account.syncOk"));
       } else {
-        setSessionMsg("Failed to save.");
+        setSessionMsg(t("settings.account.syncFailed"));
       }
     } catch {
-      setSessionMsg("Network error.");
+      setSessionMsg(t("settings.account.syncError"));
     }
   };
 
   if (loading) {
     return (
       <div className="glass rounded-2xl p-5 text-center text-sm text-text-tertiary">
-        Loading…
+        {t("common.loading")}
       </div>
     );
   }
@@ -67,49 +69,47 @@ export function SupabaseAuthPanel() {
   if (user) {
     return (
       <div className="space-y-4">
-        {/* Logged in status */}
         <div className="glass rounded-2xl p-5 ring-1 ring-green-500/30">
           <div className="flex items-center gap-3">
             <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
             <div className="flex-1">
-              <p className="text-sm font-medium">Signed in as {user.email}</p>
-              <p className="text-xs text-text-tertiary">Favorites are synced to the cloud.</p>
+              <p className="text-sm font-medium">{t("settings.account.signedInAs", { email: user.email ?? "" })}</p>
+              <p className="text-xs text-text-tertiary">{t("settings.account.favSynced")}</p>
             </div>
             <button
               onClick={() => { void signOut(); }}
               className="text-xs text-error hover:underline"
             >
-              Sign out
+              {t("settings.account.signOutBtn")}
             </button>
           </div>
         </div>
 
-        {/* Pawchive session sync */}
         <div className="glass rounded-2xl p-5">
           <button
             onClick={() => setShowSessionSync(!showSessionSync)}
             className="text-sm font-medium text-text-secondary hover:text-text-primary"
           >
-            {showSessionSync ? "▾" : "▸"} Sync pawchive.pw session cookie
+            {showSessionSync ? "▾" : "▸"} {t("settings.account.syncLabel")}
           </button>
           {showSessionSync && (
             <div className="mt-3 space-y-2">
               <p className="text-xs text-text-tertiary">
-                Stores your upstream session cookie in Supabase so it syncs across devices.
+                {t("settings.account.syncDesc")}
               </p>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={sessionInput}
                   onChange={(e) => setSessionInput(e.target.value)}
-                  placeholder="Paste session cookie…"
+                  placeholder={t("settings.account.syncPlaceholder")}
                   className="flex-1 rounded-xl border border-white/5 bg-surface-2 px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-tertiary focus:border-primary/30 focus:outline-none"
                 />
                 <button
                   onClick={handleSyncSession}
                   className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-on-primary hover:bg-primary/90"
                 >
-                  Save
+                  {t("common.save")}
                 </button>
               </div>
               {sessionMsg && (
@@ -126,9 +126,8 @@ export function SupabaseAuthPanel() {
 
   return (
     <div className="glass rounded-2xl p-5">
-      <p className="text-sm font-medium mb-4 text-text-primary">Pawchive Account</p>
+      <p className="text-sm font-medium mb-4 text-text-primary">{t("settings.account.title")}</p>
 
-      {/* Tab switcher */}
       <div className="mica mb-4 inline-flex rounded-lg border border-white/5 p-0.5">
         <button
           onClick={() => { setMode("login"); setMsg(null); }}
@@ -136,7 +135,7 @@ export function SupabaseAuthPanel() {
             mode === "login" ? "bg-primary text-on-primary" : "text-text-secondary hover:text-text-primary"
           }`}
         >
-          Sign in
+          {t("settings.account.signInBtn")}
         </button>
         <button
           onClick={() => { setMode("register"); setMsg(null); }}
@@ -144,7 +143,7 @@ export function SupabaseAuthPanel() {
             mode === "register" ? "bg-primary text-on-primary" : "text-text-secondary hover:text-text-primary"
           }`}
         >
-          Register
+          {t("settings.account.registerBtn")}
         </button>
       </div>
 
@@ -153,7 +152,7 @@ export function SupabaseAuthPanel() {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
+          placeholder={t("settings.account.email")}
           required
           className="w-full rounded-xl border border-white/5 bg-surface-2 px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
         />
@@ -161,7 +160,7 @@ export function SupabaseAuthPanel() {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
+          placeholder={t("settings.account.password")}
           required
           minLength={6}
           className="w-full rounded-xl border border-white/5 bg-surface-2 px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
@@ -171,7 +170,7 @@ export function SupabaseAuthPanel() {
           disabled={pending}
           className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary transition-all hover:bg-primary/90 disabled:opacity-50"
         >
-          {pending ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
+          {pending ? t("settings.account.pleaseWait") : mode === "login" ? t("settings.account.signInBtn") : t("settings.account.createAccount")}
         </button>
       </form>
 
