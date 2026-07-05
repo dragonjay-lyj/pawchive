@@ -230,7 +230,7 @@ function Banner({
 
           <div className="flex flex-col items-start gap-3 sm:items-end">
             {/* Follow button */}
-            <FavoriteButton kind="creator" service={service} creatorId={creatorId} />
+            <FavoriteButton kind="creator" service={service} creatorId={creatorId} creatorName={creator.name} />
 
             {/* Linked accounts */}
             {linkedAccounts.length > 0 && (

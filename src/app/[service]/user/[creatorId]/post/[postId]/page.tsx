@@ -4,6 +4,7 @@ import {
   getPost,
   getPostComments,
   getPostRevisions,
+  getThumbnailUrl,
   getThumbUrl,
   getServiceColor,
   getServiceLabel,
@@ -265,7 +266,7 @@ function MetaPanel({
 
       {/* Action buttons — favorite + flag */}
       <div className="flex flex-wrap items-center gap-2 -mx-1">
-        <FavoriteButton kind="post" service={service} creatorId={creatorId} postId={postId} />
+        <FavoriteButton kind="post" service={service} creatorId={creatorId} postId={postId} title={post.title} thumbUrl={getThumbnailUrl(post)} />
         <FlagButton service={service} creatorId={creatorId} postId={postId} />
       </div>
 
