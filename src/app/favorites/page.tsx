@@ -27,9 +27,29 @@ import {
 } from "@/lib/collections";
 import { SiteNav } from "@/app/_components/SiteNav";
 import { useI18n } from "@/lib/i18n/provider";
+import { useAuth } from "@/lib/supabase/auth-provider";
+
+/** Map a Supabase favorite row to the FavoriteCreator shape used in the UI. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapSupabaseFav(f: any): FavoriteCreator & { _supabase_id: string } {
+  return {
+    faved_seq: 0,
+    id: f.creator_id,
+    service: f.service,
+    name: f.creator_name ?? "",
+    title: f.title ?? undefined,
+    indexed: f.created_at,
+    updated: f.created_at,
+    last_imported: f.created_at,
+    user: f.creator_id,
+    creator_id: f.creator_id,
+    _supabase_id: f.id,
+  };
+}
 
 export default function FavoritesPage() {
   const { t } = useI18n();
+  const { user } = useAuth();
   const [artists, setArtists] = useState<FavoriteCreator[]>([]);
   const [posts, setPosts] = useState<FavoriteCreator[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,16 +69,47 @@ export default function FavoritesPage() {
 
     const load = async () => {
       const session = getSessionCookie();
+      const isAuthed = !!user || !!session;
       if (cancelled) return;
-      setAuthed(!!session);
+      setAuthed(isAuthed);
       setError(null);
-      if (!session) {
+      if (!isAuthed) {
         setArtists([]);
         setPosts([]);
         setLoading(false);
         return;
       }
       setLoading(true);
+
+      // Try Supabase first
+      if (user) {
+        try {
+          const [aRes, pRes] = await Promise.allSettled([
+            fetch("/api/favorites?type=creator"),
+            fetch("/api/favorites?type=post"),
+          ]);
+          if (cancelled) return;
+
+          if (aRes.status === "fulfilled" && aRes.value.ok) {
+            const json = await aRes.value.json();
+            setArtists(json.favorites.map(mapSupabaseFav));
+          } else {
+            setArtists([]);
+          }
+
+          if (pRes.status === "fulfilled" && pRes.value.ok) {
+            const json = await pRes.value.json();
+            setPosts(json.favorites.map(mapSupabaseFav));
+          } else {
+            setPosts([]);
+          }
+
+          setLoading(false);
+          return;
+        } catch { /* fall through to upstream */ }
+      }
+
+      // Fallback to upstream API (pawchive session)
       try {
         const [a, p] = await Promise.allSettled([
           getAccountFavorites("artist"),
@@ -90,7 +141,7 @@ export default function FavoritesPage() {
       window.removeEventListener("pawchive:session-change", onSessionChange);
       window.removeEventListener("storage", onStorage);
     };
-  }, []);
+  }, [user]);
 
   return (
     <div className="min-h-screen">
@@ -198,7 +249,12 @@ function ArtistCard({ fav, onRemoved }: { fav: FavoriteCreator; onRemoved: () =>
     setErr(null);
     startTransition(async () => {
       try {
-        await removeFavoriteCreator(fav.service, fav.id);
+        const sid = (fav as { _supabase_id?: string })._supabase_id;
+        if (sid) {
+          await fetch(`/api/favorites?id=${sid}`, { method: "DELETE" });
+        } else {
+          await removeFavoriteCreator(fav.service, fav.id);
+        }
         onRemoved();
       } catch (e) {
         setErr(e instanceof AuthError ? "Session expired." : "Failed.");
@@ -275,7 +331,12 @@ function PostFavCard({ fav, onRemoved }: { fav: FavoriteCreator; onRemoved: () =
     setErr(null);
     startTransition(async () => {
       try {
-        await removeFavoritePost(fav.service, creatorId, postId);
+        const sid = (fav as { _supabase_id?: string })._supabase_id;
+        if (sid) {
+          await fetch(`/api/favorites?id=${sid}`, { method: "DELETE" });
+        } else {
+          await removeFavoritePost(fav.service, creatorId, postId);
+        }
         onRemoved();
       } catch (e) {
         setErr(e instanceof AuthError ? "Session expired." : "Failed.");

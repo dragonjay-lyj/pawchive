@@ -9,6 +9,7 @@ import { LOCALES, type Locale } from "@/lib/i18n/dict";
 import { isAdmin, refreshAdminStatus, tryAdminLogin, adminLogout, changeAdminPassword } from "@/lib/admin";
 import { TranslationHistoryPanel } from "@/app/_components/TranslationHistoryPanel";
 import { SiteConfigForm } from "@/app/_components/SiteConfigForm";
+import { SupabaseAuthPanel } from "@/app/_components/SupabaseAuthPanel";
 
 // ============================================================
 // Settings Page — Fluent Design 2 segmented layout
@@ -220,6 +221,11 @@ export default function SettingsPage() {
             {/* ========== ACCOUNT ========== */}
             <section id="account">
               <h2 className="mb-4 font-display text-xl">{t("settings.account")}</h2>
+
+              {/* Supabase account */}
+              <div className="mb-6">
+                <SupabaseAuthPanel />
+              </div>
 
               {/* Session status */}
               <div className={cn("glass rounded-2xl p-5 mb-4", hasSession && "ring-1 ring-green-500/30")}>
