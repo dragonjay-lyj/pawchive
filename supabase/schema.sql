@@ -133,3 +133,25 @@ CREATE POLICY "Users can view own profile"
 CREATE POLICY "Users can update own profile"
   ON profiles FOR UPDATE
   USING (auth.uid() = id);
+
+-- ============================================================
+-- Site Config — global settings (DeepLX URL, AI endpoint, etc.)
+-- Public read, admin write via API (uses service_role client)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS site_config (
+  id                  INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  translation_base_url TEXT NOT NULL DEFAULT '',
+  translation_api_key TEXT NOT NULL DEFAULT '',
+  ai_search_endpoint   TEXT NOT NULL DEFAULT '',
+  updated_at           TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Seed default row
+INSERT INTO site_config (id) VALUES (1) ON CONFLICT DO NOTHING;
+
+ALTER TABLE site_config ENABLE ROW LEVEL SECURITY;
+
+-- Everyone can read site config (needed for translation proxy)
+CREATE POLICY "Public read site_config"
+  ON site_config FOR SELECT
+  USING (true);
