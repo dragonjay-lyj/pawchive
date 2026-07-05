@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // ============================================================
-// Reverse proxy for pawchive.st
+// Reverse proxy for pawchive.pw
 // Forwards all requests, rewrites Set-Cookie (strips Domain),
 // and rewrites HTML to keep relative URLs working through proxy.
 // ============================================================
@@ -131,7 +131,7 @@ function copyHeaders(from: Response, to: NextResponse) {
 function copySetCookie(from: Response, to: NextResponse) {
   const rawCookies = from.headers.getSetCookie?.() ?? [];
   for (const cookie of rawCookies) {
-    // Strip Domain=pawchive.st so cookie falls to our domain
+    // Strip Domain=pawchive.pw so cookie falls to our domain
     // Strip SameSite=Lax/Strict if needed, and HttpOnly
     const cleaned = cookie
       .replace(/;\s*Domain=[^;]+/i, "")
@@ -144,7 +144,7 @@ function copySetCookie(from: Response, to: NextResponse) {
 
 function rewriteUrl(url: string | null): string {
   if (!url) return "/";
-  // Absolute pawchive.st URL → proxy URL
+  // Absolute pawchive.pw URL → proxy URL
   if (url.startsWith("https://pawchive.pw")) {
     return PROXY_PREFIX + url.slice("https://pawchive.pw".length);
   }
@@ -180,7 +180,7 @@ function rewriteHtml(html: string, _proxyBase: string): string {
 </script></head>`
   );
 
-  // Rewrite absolute pawchive.st URLs to go through proxy
+  // Rewrite absolute pawchive.pw URLs to go through proxy
   result = result.replace(
     /(href|src|action|content)="https:\/\/pawchive\.pw(\/[^"]*)"/gi,
     (_, attr, path) => `${attr}="${PROXY_PREFIX}${path}"`

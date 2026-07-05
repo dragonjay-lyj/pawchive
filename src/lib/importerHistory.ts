@@ -1,6 +1,6 @@
 // ============================================================
 // Local Importer submission log — client-side only.
-// Upstream pawchive.st doesn't expose a JSON keys endpoint, so
+// Upstream pawchive.pw doesn't expose a JSON keys endpoint, so
 // this is a best-effort record of what *this browser* submitted.
 // Session keys are never stored — only service, timestamp, status.
 // ============================================================

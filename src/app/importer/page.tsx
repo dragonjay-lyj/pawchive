@@ -313,7 +313,7 @@ export default function ImporterPage() {
 
 /**
  * Parse an upstream error response body into a compact message.
- * pawchive.st returns plain text with one error per line for 4xx.
+ * pawchive.pw returns plain text with one error per line for 4xx.
  * Some paths still return HTML — for those we grab <title> or a
  * .flash / .error block. Falls back to trimmed raw content.
  */

@@ -1,5 +1,5 @@
 // ============================================================
-// Pawchive API 客户端 — 基于 pawchive.st API v1
+// Pawchive API 客户端 — 基于 pawchive.pw API v1
 // 支持公开 API + cookie 认证 API
 // ============================================================
 
@@ -17,7 +17,7 @@ import type {
   PostSearchParams,
 } from "./types";
 
-// Server-side: use absolute pawchive.st URL (Next.js server fetch can't resolve relative)
+// Server-side: use absolute pawchive.pw URL (Next.js server fetch can't resolve relative)
 // Client-side: use proxy route (avoids CORS)
 const API_BASE =
   typeof window === "undefined"

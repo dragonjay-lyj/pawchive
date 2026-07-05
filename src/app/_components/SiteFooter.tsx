@@ -24,7 +24,7 @@ export function SiteFooter() {
           <span className="font-display text-sm text-text-secondary">
             <span className="text-primary">Paw</span>chive
           </span>
-          <span className="hidden sm:inline">· Community frontend for pawchive.st</span>
+          <span className="hidden sm:inline">· Community frontend for pawchive.pw</span>
         </div>
         <div className="flex items-center gap-4">
           <Link href="/importer" className="hover:text-text-secondary transition-colors">{t("nav.importer")}</Link>

@@ -609,7 +609,7 @@ export default function SettingsPage() {
                     <span className="font-medium text-text-primary">Pawchive</span> — {t("settings.about.tagline")}
                   </p>
                   <p className="text-text-tertiary">{t("settings.about.desc")}</p>
-                  <a href="https://pawchive.st" target="_blank" rel="noopener" className="inline-block mt-2 text-primary hover:underline text-xs">
+                  <a href="https://pawchive.pw" target="_blank" rel="noopener" className="inline-block mt-2 text-primary hover:underline text-xs">
                     {t("settings.about.visit")}
                   </a>
                   <div className="mt-4 flex items-center gap-2 pt-4 border-t border-white/5">
