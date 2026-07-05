@@ -10,6 +10,7 @@ import { isAdmin, refreshAdminStatus, adminLogout } from "@/lib/admin";
 import { TranslationHistoryPanel } from "@/app/_components/TranslationHistoryPanel";
 import { SiteConfigForm } from "@/app/_components/SiteConfigForm";
 import { SupabaseAuthPanel } from "@/app/_components/SupabaseAuthPanel";
+import { useAuth } from "@/lib/supabase/auth-provider";
 
 // ============================================================
 // Settings Page — Fluent Design 2 segmented layout
@@ -28,6 +29,7 @@ const LANG_NAMES: Record<Locale, string> = { en: "English", zh: "简体中文" }
 
 export default function SettingsPage() {
   const { t, locale, setLocale } = useI18n();
+  const { refresh: refreshAuth } = useAuth();
   const SECTIONS: { id: string; label: string; icon: string }[] = [
     { id: "account", label: t("settings.account"), icon: "🔑" },
     { id: "appearance", label: t("settings.appearance"), icon: "🎨" },
@@ -91,12 +93,21 @@ export default function SettingsPage() {
           setSaved(true);
           setTimeout(() => setSaved(false), 3000);
           setShowLoginModal(false);
+
+          // Auto-create Supabase account from pawchive.pw session
+          fetch("/api/auth/auto-login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session: sessionValue }),
+          })
+            .then(() => refreshAuth())
+            .catch(() => {});
         }
       }
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, []);
+  }, [refreshAuth]);
 
   const handleSave = () => {
     const trimmed = cookieInput.trim();
