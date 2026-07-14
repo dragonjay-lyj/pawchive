@@ -103,7 +103,7 @@ export default function ManagePage() {
       title: p.title,
       content: p.content ?? "",
       published: p.published?.slice(0, 16) ?? "",
-      attachments: p.post_attachments.map((a) => ({
+      attachments: (p.post_attachments ?? []).map((a) => ({
         name: a.name,
         url: a.url ?? "",
         file_path: a.file_path ?? "",

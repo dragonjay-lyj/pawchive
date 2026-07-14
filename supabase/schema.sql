@@ -124,7 +124,13 @@ CREATE INDEX IF NOT EXISTS idx_attachments_post ON post_attachments(post_id);
 
 ALTER TABLE post_attachments ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can manage own attachments"
+-- Everyone can view attachments
+CREATE POLICY "Everyone can view attachments"
+  ON post_attachments FOR SELECT
+  USING (true);
+
+-- Only the post author can insert/update/delete attachments
+CREATE POLICY "Authors can manage attachments"
   ON post_attachments FOR ALL
   USING (
     EXISTS (
