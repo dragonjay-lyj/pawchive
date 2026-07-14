@@ -90,8 +90,21 @@ CREATE INDEX IF NOT EXISTS idx_user_posts_user ON user_posts(user_id);
 
 ALTER TABLE user_posts ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can manage own posts"
-  ON user_posts FOR ALL
+-- Everyone can view posts; only the author can edit/delete
+CREATE POLICY "Everyone can view posts"
+  ON user_posts FOR SELECT
+  USING (true);
+
+CREATE POLICY "Authors can insert their posts"
+  ON user_posts FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Authors can update their posts"
+  ON user_posts FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Authors can delete their posts"
+  ON user_posts FOR DELETE
   USING (auth.uid() = user_id);
 
 -- ============================================================

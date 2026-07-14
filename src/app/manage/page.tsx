@@ -231,7 +231,11 @@ export default function ManagePage() {
 
         <div className="space-y-3">
           {posts.map((p) => (
-            <div key={p.id} className="glass rounded-2xl p-4">
+            <div
+              key={p.id}
+              className="glass rounded-2xl p-4 cursor-pointer hover:bg-surface-2 transition-colors"
+              onClick={() => openEdit(p)}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
@@ -244,6 +248,14 @@ export default function ManagePage() {
                     {p.is_new && (
                       <span className="rounded-md bg-primary/20 px-1.5 py-0.5 text-[10px] text-primary">{t("manage.new")}</span>
                     )}
+                    {/* Link to upstream creator page */}
+                    <Link
+                      href={`/${p.service}/user/${p.creator_id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-[10px] text-text-tertiary hover:text-primary"
+                    >
+                      @{p.creator_id}
+                    </Link>
                   </div>
                   <h3 className="text-sm font-medium truncate">{p.title}</h3>
                   {p.content && (
