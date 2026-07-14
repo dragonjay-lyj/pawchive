@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/supabase/auth-provider";
 import { useI18n } from "@/lib/i18n/provider";
@@ -17,6 +18,7 @@ interface Attachment {
 
 interface UserPost {
   id: string;
+  user_id: string;
   service: string;
   creator_id: string;
   post_id: string | null;
@@ -54,6 +56,7 @@ const emptyForm: PostForm = {
 export default function ManagePage() {
   const { t } = useI18n();
   const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [posts, setPosts] = useState<UserPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,7 +70,8 @@ export default function ManagePage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/posts");
+      // Use public API — everyone can see all posts
+      const res = await fetch("/api/posts/public");
       if (!res.ok) throw new Error(t("manage.loadFailed"));
       const json = await res.json();
       setPosts(json.posts ?? []);
@@ -80,10 +84,9 @@ export default function ManagePage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) { setLoading(false); setError(t("manage.signInPrompt")); return; }
     void loadPosts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authLoading]);
+  }, [authLoading]);
 
   const openNew = () => {
     setForm(emptyForm);
@@ -188,22 +191,6 @@ export default function ManagePage() {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen">
-        <SiteNav />
-        <main className="mx-auto max-w-[960px] px-4 pb-24 pt-8">
-          <div className="glass rounded-2xl p-8 text-center">
-            <p className="text-text-secondary mb-4">{t("manage.signInPrompt")}</p>
-            <Link href="/settings" className="text-primary hover:underline text-sm">
-              {t("manage.goSettings")}
-            </Link>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen">
       <SiteNav active="manage" />
@@ -211,12 +198,14 @@ export default function ManagePage() {
       <main className="mx-auto max-w-[960px] px-4 pb-24 pt-8">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="font-display text-3xl font-bold">{t("manage.title")}</h1>
-          <button
-            onClick={openNew}
-            className="neo-badge rounded-xl px-4 py-2 text-sm font-bold text-primary hover:bg-surface-2"
-          >
-            {t("manage.newPost")}
-          </button>
+          {user && (
+            <button
+              onClick={openNew}
+              className="neo-badge rounded-xl px-4 py-2 text-sm font-bold text-primary hover:bg-surface-2"
+            >
+              {t("manage.newPost")}
+            </button>
+          )}
         </div>
 
         {error && (
@@ -234,7 +223,7 @@ export default function ManagePage() {
             <div
               key={p.id}
               className="glass rounded-2xl p-4 cursor-pointer hover:bg-surface-2 transition-colors"
-              onClick={() => openEdit(p)}
+              onClick={() => router.push(`/manage/${p.id}`)}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
@@ -266,19 +255,29 @@ export default function ManagePage() {
                     {p.published && ` · ${new Date(p.published).toLocaleDateString()}`}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => openEdit(p)}
+                <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <Link
+                    href={`/manage/${p.id}`}
                     className="rounded-lg bg-surface-3 px-3 py-1 text-xs text-text-secondary hover:bg-surface-4 hover:text-text-primary"
                   >
                     {t("manage.edit")}
-                  </button>
-                  <button
-                    onClick={() => handleDelete(p.id)}
-                    className="rounded-lg bg-surface-3 px-3 py-1 text-xs text-error hover:bg-surface-4"
-                  >
-                    {t("manage.delete")}
-                  </button>
+                  </Link>
+                  {user && user.id === p.user_id && (
+                    <>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openEdit(p); }}
+                        className="rounded-lg bg-surface-3 px-3 py-1 text-xs text-text-secondary hover:bg-surface-4 hover:text-text-primary"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }}
+                        className="rounded-lg bg-surface-3 px-3 py-1 text-xs text-error hover:bg-surface-4"
+                      >
+                        {t("manage.delete")}
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
