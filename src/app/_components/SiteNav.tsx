@@ -59,6 +59,12 @@ export function SiteNav({ active, showRightLinks = true }: Props) {
             <Link href="/manage" className={smallLinkCls("manage")}>{t("nav.manage")}</Link>
             <Link href="/favorites" className={smallLinkCls("favorites")}>{t("nav.favorites")}</Link>
             <Link href="/settings" className={smallLinkCls("settings")}>{t("nav.settings")}</Link>
+            <a
+              href="mailto:lyjcody@foxmail.com"
+              className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+            >
+              💬 {t("nav.feedback")}
+            </a>
           </div>
         )}
       </div>

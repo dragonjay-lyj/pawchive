@@ -36,6 +36,12 @@ export function SiteFooter() {
           >
             ☕ Sponsor
           </a>
+          <a
+            href="mailto:lyjcody@foxmail.com"
+            className="hover:text-text-secondary transition-colors"
+          >
+            💬 lyjcody@foxmail.com
+          </a>
           <Link href="/importer" className="hover:text-text-secondary transition-colors">{t("nav.importer")}</Link>
           <Link href="/hash-lookup" className="hover:text-text-secondary transition-colors">{t("nav.hashLookup")}</Link>
           <Link href="/settings#about" className="hover:text-text-secondary transition-colors">{t("settings.about")}</Link>

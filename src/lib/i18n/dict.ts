@@ -34,6 +34,7 @@ export const dict = {
     "nav.creators": "Creators",
     "nav.favorites": "Favorites",
     "nav.settings": "Settings",
+    "nav.feedback": "Feedback",
     "nav.hashLookup": "Hash Lookup",
     "nav.importer": "Importer",
     "nav.manage": "Manage",
@@ -450,6 +451,7 @@ export const dict = {
     "nav.creators": "创作者",
     "nav.favorites": "收藏",
     "nav.settings": "设置",
+    "nav.feedback": "反馈",
     "nav.hashLookup": "哈希查找",
     "nav.importer": "导入",
 
