@@ -28,6 +28,7 @@ export const STATIC_ROUTES: { path: string; changeFrequency: "hourly" | "daily" 
   { path: "/hash-lookup", changeFrequency: "monthly", priority: 0.4 },
   { path: "/importer", changeFrequency: "monthly", priority: 0.5 },
   { path: "/importer/tutorial", changeFrequency: "monthly", priority: 0.4 },
+  { path: "/manage", changeFrequency: "hourly", priority: 0.8 },
   { path: "/favorites", changeFrequency: "monthly", priority: 0.2 },
   { path: "/settings", changeFrequency: "monthly", priority: 0.2 },
 ];
