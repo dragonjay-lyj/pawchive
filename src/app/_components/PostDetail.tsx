@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/supabase/auth-provider";
 import { useI18n } from "@/lib/i18n/provider";
 import { getServiceColor, getServiceLabel } from "@/lib/api";
+import { CommentSection } from "@/app/_components/CommentSection";
 
 interface Attachment {
   id: string;
@@ -151,6 +152,8 @@ export function PostDetail({ post, error: initError }: { post: UserPost | null; 
           </div>
         </div>
       )}
+
+      <CommentSection postId={post.id} />
     </main>
   );
 }

@@ -190,3 +190,38 @@ CREATE POLICY "Admin write site_config"
       AND profiles.is_admin = true
     )
   );
+
+-- ============================================================
+-- Post Comments — community discussion
+-- ============================================================
+CREATE TABLE IF NOT EXISTS post_comments (
+  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  post_id       UUID NOT NULL REFERENCES user_posts(id) ON DELETE CASCADE,
+  user_id       UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  author_name   TEXT,                  -- optional display name
+  author_email  TEXT,                  -- optional (Gravatar, not public)
+  content       TEXT NOT NULL,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_comments_post ON post_comments(post_id, created_at);
+
+ALTER TABLE post_comments ENABLE ROW LEVEL SECURITY;
+
+-- Everyone can view comments
+CREATE POLICY "Everyone can view comments"
+  ON post_comments FOR SELECT
+  USING (true);
+
+-- Anyone can post comments (anonymous or logged in)
+CREATE POLICY "Anyone can post comments"
+  ON post_comments FOR INSERT
+  WITH CHECK (true);
+
+-- Authors can delete their own comments
+CREATE POLICY "Authors can delete own comments"
+  ON post_comments FOR DELETE
+  USING (
+    auth.uid() = user_id
+    OR (user_id IS NULL AND author_name IS NOT NULL)
+  );
