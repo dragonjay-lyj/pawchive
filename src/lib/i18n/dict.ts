@@ -25,6 +25,7 @@ export const dict = {
     "common.endOfFeed": "— End of feed —",
     "common.noResults": "No results found.",
     "common.language": "Language",
+    "common.sponsor": "Support this project on Ko-fi",
 
     // -------- Navigation --------
     "nav.home": "Home",
@@ -251,6 +252,12 @@ export const dict = {
     "manage.loadFailed": "Failed to load posts.",
     "manage.attachmentsCount": "{count} attachments",
     "manage.loading": "Loading…",
+    "manage.community": "Community Posts",
+    "manage.writePost": "Write a post…",
+    "manage.postContent": "What would you like to share? Include download links, notes, or anything useful.",
+    "manage.authorAnonymous": "Anonymous",
+    "manage.viewPost": "View",
+    "manage.byAuthor": "by",
     "settings.appearance.themeCurrent": "Current",
     "settings.appearance.themeApply": "Apply",
     "settings.appearance.custom": "Custom accent",
@@ -434,6 +441,7 @@ export const dict = {
     "common.endOfFeed": "— 已到底 —",
     "common.noResults": "没有找到结果。",
     "common.language": "语言",
+    "common.sponsor": "在 Ko-fi 上支持本项目",
 
     // -------- 导航 --------
     "nav.home": "首页",
@@ -659,6 +667,12 @@ export const dict = {
     "manage.loadFailed": "加载帖子失败。",
     "manage.attachmentsCount": "{count} 个附件",
     "manage.loading": "加载中…",
+    "manage.community": "社区帖子",
+    "manage.writePost": "写点什么…",
+    "manage.postContent": "分享你的内容。可以添加下载链接、备注或其他有用信息。",
+    "manage.authorAnonymous": "匿名用户",
+    "manage.viewPost": "查看",
+    "manage.byAuthor": "作者",
     "settings.appearance.themeCurrent": "当前",
     "settings.appearance.themeApply": "应用",
     "settings.appearance.custom": "自定义主色",

@@ -29,6 +29,7 @@ interface UserPost {
   created_at: string;
   updated_at: string;
   post_attachments: Attachment[];
+  profiles?: { username: string | null } | null;
 }
 
 export default function PostDetailPage() {
@@ -123,11 +124,18 @@ export default function PostDetailPage() {
             </Link>
           </div>
           <h1 className="font-display text-2xl font-bold">{post.title}</h1>
-          {post.published && (
-            <p className="mt-1 text-xs text-text-tertiary">
-              {new Date(post.published).toLocaleDateString()}
-            </p>
-          )}
+          <div className="mt-2 flex items-center gap-2 text-xs text-text-tertiary">
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[9px] font-bold text-primary">
+              {(post.profiles?.username ?? post.user_id ?? "?").slice(0, 2).toUpperCase()}
+            </span>
+            <span>{post.profiles?.username ?? post.user_id?.slice(0, 8) ?? t("manage.authorAnonymous")}</span>
+            {post.published && (
+              <>
+                <span>·</span>
+                <span>{new Date(post.published).toLocaleDateString()}</span>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Author actions */}

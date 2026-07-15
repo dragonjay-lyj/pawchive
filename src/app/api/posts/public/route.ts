@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   if (id) {
     const { data } = await supabase
       .from("user_posts")
-      .select("*, post_attachments(*)")
+      .select("*, post_attachments(*), profiles!user_posts_user_id_fkey(username)")
       .eq("id", id)
       .single();
     return NextResponse.json({ post: data ?? null });
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from("user_posts")
-    .select("*, post_attachments(*)")
+    .select("*, post_attachments(*), profiles!user_posts_user_id_fkey(username)")
     .order("created_at", { ascending: false });
 
   if (service) query = query.eq("service", service);

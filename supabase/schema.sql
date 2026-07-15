@@ -145,6 +145,11 @@ CREATE POLICY "Authors can manage attachments"
 -- ============================================================
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
+-- Everyone can view basic profile info (for community display)
+CREATE POLICY "Everyone can view profiles"
+  ON profiles FOR SELECT
+  USING (true);
+
 CREATE POLICY "Users can view own profile"
   ON profiles FOR SELECT
   USING (auth.uid() = id);

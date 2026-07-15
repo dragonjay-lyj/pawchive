@@ -27,6 +27,15 @@ export function SiteFooter() {
           <span className="hidden sm:inline">· Community frontend for pawchive.pw</span>
         </div>
         <div className="flex items-center gap-4">
+          <a
+            href="https://ko-fi.com/dragonjay"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#FF5E5B]/10 px-2.5 py-1 text-xs font-medium text-[#FF5E5B] hover:bg-[#FF5E5B]/20 transition-colors"
+            title={t("common.sponsor")}
+          >
+            ☕ Sponsor
+          </a>
           <Link href="/importer" className="hover:text-text-secondary transition-colors">{t("nav.importer")}</Link>
           <Link href="/hash-lookup" className="hover:text-text-secondary transition-colors">{t("nav.hashLookup")}</Link>
           <Link href="/settings#about" className="hover:text-text-secondary transition-colors">{t("settings.about")}</Link>
