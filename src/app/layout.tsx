@@ -74,6 +74,9 @@ export default async function RootLayout({
   const locale = await detectLocaleFromRequest();
   return (
     <html lang={locale} className="dark scroll-smooth">
+      <head>
+        <link rel="alternate" type="application/rss+xml" title={`${SITE_NAME} Community RSS`} href="/rss.xml" />
+      </head>
       <body className="min-h-screen bg-surface-0 text-text-primary antialiased flex flex-col">
         <I18nProvider initial={locale}>
           <AuthProvider>
