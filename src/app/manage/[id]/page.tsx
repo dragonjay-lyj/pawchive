@@ -2,15 +2,21 @@ import type { Metadata } from "next";
 import { PostDetail } from "@/app/_components/PostDetail";
 import { SiteNav } from "@/app/_components/SiteNav";
 import { SITE_NAME } from "@/lib/site";
+import { createClient } from "@supabase/supabase-js";
 
 async function getPost(id: string) {
-  const siteUrl = process.env.PAWCHIVE_SITE_URL
-    ?? process.env.NEXT_PUBLIC_SITE_URL
-    ?? "http://localhost:3000";
-  const res = await fetch(`${siteUrl}/api/posts/public?id=${encodeURIComponent(id)}`);
-  if (!res.ok) return null;
-  const json = await res.json();
-  return json.post ?? null;
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  const { data } = await supabase
+    .from("user_posts")
+    .select("*, post_attachments(*), profiles!user_posts_user_id_fkey(username)")
+    .eq("id", id)
+    .single();
+
+  return data ?? null;
 }
 
 export async function generateMetadata({
