@@ -82,6 +82,9 @@ CREATE TABLE IF NOT EXISTS user_posts (
   content       TEXT,                  -- description / body
   published     TIMESTAMPTZ,
   is_new        BOOLEAN NOT NULL DEFAULT false,  -- true = not from upstream
+  is_pinned     BOOLEAN NOT NULL DEFAULT false,  -- pinned to top
+  tags          TEXT[] DEFAULT '{}',             -- filter chips: e.g. {resource,question,guide}
+  thanks_count  INTEGER NOT NULL DEFAULT 0,      -- cached like count
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -225,3 +228,30 @@ CREATE POLICY "Authors can delete own comments"
     auth.uid() = user_id
     OR (user_id IS NULL AND author_name IS NOT NULL)
   );
+
+-- ============================================================
+-- Post Thanks (likes) — one per user per post
+-- ============================================================
+CREATE TABLE IF NOT EXISTS post_thanks (
+  id        UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  post_id   UUID NOT NULL REFERENCES user_posts(id) ON DELETE CASCADE,
+  user_id   UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(post_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_thanks_post ON post_thanks(post_id);
+
+ALTER TABLE post_thanks ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Everyone can see thanks"
+  ON post_thanks FOR SELECT
+  USING (true);
+
+CREATE POLICY "Authenticated users can thank"
+  ON post_thanks FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can un-thank"
+  ON post_thanks FOR DELETE
+  USING (auth.uid() = user_id);
