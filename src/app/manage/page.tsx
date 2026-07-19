@@ -24,7 +24,7 @@ async function fetchPosts() {
 
   const { data } = await supabase
     .from("user_posts")
-    .select("*, post_attachments(*), profiles!user_posts_user_id_fkey(username)")
+    .select("*, post_attachments(*), post_comments(count), profiles!user_posts_user_id_fkey(username)")
     .order("created_at", { ascending: false })
     .limit(100);
 

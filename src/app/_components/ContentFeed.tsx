@@ -15,6 +15,7 @@ interface UserPost {
   title: string; content: string | null; published: string | null; is_new: boolean;
   is_pinned?: boolean; tags?: string[]; thanks_count?: number;
   created_at: string; updated_at: string; post_attachments: Attachment[];
+  post_comments?: { count: number }[];
   profiles?: { username: string | null } | null;
 }
 
@@ -229,6 +230,8 @@ export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
                   <span>{(p.profiles?.username ?? p.user_id?.slice(0, 8))}</span>
                   <span>·</span>
                   <span>{new Date(p.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                  <span>·</span>
+                  <span>💬 {p.post_comments?.[0]?.count ?? 0}</span>
                   <span>·</span>
                   <button onClick={(e) => { e.stopPropagation(); handleThanks(p.id); }} className="hover:text-red-400 transition-colors">❤️ {p.thanks_count ?? 0}</button>
                   {user && user.id === p.user_id && (

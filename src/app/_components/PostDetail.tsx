@@ -26,6 +26,10 @@ interface UserPost {
   content: string | null;
   published: string | null;
   is_new: boolean;
+  is_pinned?: boolean;
+  tags?: string[];
+  thanks_count?: number;
+  source_url?: string;
   created_at: string;
   updated_at: string;
   post_attachments: Attachment[];
@@ -105,6 +109,28 @@ export function PostDetail({ post, error: initError }: { post: UserPost | null; 
             </>
           )}
         </div>
+      </div>
+
+      {/* Tags + source + thanks row */}
+      <div className="flex flex-wrap items-center gap-2 mb-6">
+        {(post.tags ?? []).map((tag) => (
+          <span key={tag} className="rounded-lg bg-surface-3 px-2 py-1 text-[10px] text-text-secondary">{tag}</span>
+        ))}
+        {post.source_url && (
+          <a href={post.source_url} target="_blank" rel="noopener noreferrer" className="rounded-lg bg-blue-500/10 px-2 py-1 text-[10px] text-blue-400 hover:bg-blue-500/20">
+            🔗 Source
+          </a>
+        )}
+        <button
+          onClick={async () => {
+            if (!user) { router.push("/settings"); return; }
+            await fetch(`/api/posts/${post.id}/thanks`, { method: "POST" });
+            window.location.reload();
+          }}
+          className="ml-auto rounded-lg bg-surface-3 px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-surface-4 transition-colors"
+        >
+          ❤️ {post.thanks_count ?? 0} Thanks
+        </button>
       </div>
 
       {isAuthor && (

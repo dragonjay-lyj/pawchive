@@ -43,6 +43,7 @@ export function CommentSection({ postId }: { postId: string }) {
   const [content, setContent] = useState("");
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState("");
+  const [expandedSpam, setExpandedSpam] = useState<Set<string>>(new Set());
 
   // Load comments
   const loadComments = () => {
@@ -157,8 +158,24 @@ export function CommentSection({ postId }: { postId: string }) {
             const isAuthor = user && c.user_id === user.id;
 
             const isGreat = c.content.length >= 100;
+            const isSpam = c.content.length < 5;
+
+            if (isSpam && !expandedSpam.has(c.id)) {
+              return (
+                <div key={c.id} className="glass rounded-2xl p-3">
+                  <button
+                    onClick={() => setExpandedSpam((s) => new Set(s).add(c.id))}
+                    className="w-full text-left text-xs text-text-tertiary italic flex items-center gap-2 hover:text-text-secondary"
+                  >
+                    <span className="rounded bg-surface-3 px-1.5 py-0.5 text-[10px]">Collapsed</span>
+                    This reply was flagged as low-effort. Click to expand.
+                  </button>
+                </div>
+              );
+            }
+
             return (
-              <div key={c.id} className={`glass rounded-2xl p-4 ${isGreat ? "ring-1 ring-yellow-500/30 bg-yellow-500/3" : ""}`}>
+              <div key={c.id} className={`glass rounded-2xl p-4 ${isGreat ? "ring-1 ring-yellow-500/30 bg-yellow-500/3" : ""} ${isSpam ? "opacity-70" : ""}`}>
                 <div className="flex items-start gap-3">
                   {avatar ? (
                     <img src={avatar} alt="" className="h-8 w-8 rounded-full bg-surface-3 shrink-0" />
