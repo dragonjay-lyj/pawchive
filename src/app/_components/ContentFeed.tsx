@@ -24,10 +24,11 @@ type ViewMode = "list" | "gallery";
 interface PostForm {
   service: string; creator_id: string; post_id: string;
   title: string; content: string; published: string;
+  tags: string; sourceUrl: string;
   attachments: { name: string; url: string; file_path: string; size: string }[];
 }
 
-const emptyForm: PostForm = { service: "patreon", creator_id: "", post_id: "", title: "", content: "", published: "", attachments: [] };
+const emptyForm: PostForm = { service: "patreon", creator_id: "", post_id: "", title: "", content: "", published: "", tags: "", sourceUrl: "", attachments: [] };
 
 export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
   const { t } = useI18n();
@@ -72,6 +73,7 @@ export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
     setForm({
       service: p.service, creator_id: p.creator_id, post_id: p.post_id ?? "",
       title: p.title, content: p.content ?? "", published: p.published?.slice(0, 16) ?? "",
+      tags: (p.tags ?? []).join(", "), sourceUrl: "",
       attachments: (p.post_attachments ?? []).map((a) => ({ name: a.name, url: a.url ?? "", file_path: a.file_path ?? "", size: a.size?.toString() ?? "" })),
     });
     setEditingId(p.id); setShowForm(true); setSaveMsg("");
@@ -90,6 +92,8 @@ export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
         id: editingId ?? undefined, service: form.service, creator_id: form.creator_id,
         post_id: form.post_id || undefined, title: form.title, content: form.content || undefined,
         published: form.published || undefined,
+        tags: form.tags ? form.tags.split(",").map((s) => s.trim()).filter(Boolean) : [],
+        source_url: form.sourceUrl || undefined,
         attachments: form.attachments.filter((a) => a.name).map((a) => ({
           name: a.name, url: a.url || undefined, file_path: a.file_path || undefined,
           size: a.size ? parseInt(a.size, 10) || undefined : undefined,
@@ -160,6 +164,12 @@ export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
               </select>
               <input type="text" value={form.creator_id} onChange={(e) => setForm((f) => ({ ...f, creator_id: e.target.value }))} required placeholder={t("manage.creatorId")}
                 className="flex-1 rounded-xl border border-white/5 bg-surface-2 px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-tertiary focus:border-primary/30 focus:outline-none" />
+            </div>
+            <div className="flex gap-2">
+              <input type="text" value={form.sourceUrl} onChange={(e) => setForm((f) => ({ ...f, sourceUrl: e.target.value }))} placeholder={t("manage.sourceUrl")}
+                className="flex-1 rounded-xl border border-white/5 bg-surface-2 px-3 py-2 text-xs font-mono text-text-primary placeholder:text-text-tertiary focus:border-primary/30 focus:outline-none" />
+              <input type="text" value={form.tags} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))} placeholder={t("manage.tagsPlaceholder")}
+                className="w-40 rounded-xl border border-white/5 bg-surface-2 px-3 py-2 text-xs text-text-primary placeholder:text-text-tertiary focus:border-primary/30 focus:outline-none" />
             </div>
             <details className="text-xs"><summary className="cursor-pointer text-text-tertiary hover:text-text-secondary">{t("manage.attachments")} ({form.attachments.filter(a => a.name).length})</summary>
               <div className="mt-2 space-y-2">

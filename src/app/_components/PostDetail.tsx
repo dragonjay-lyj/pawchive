@@ -130,25 +130,42 @@ export function PostDetail({ post, error: initError }: { post: UserPost | null; 
       )}
 
       {post.post_attachments && post.post_attachments.length > 0 && (
-        <div className="glass rounded-2xl p-6">
-          <h2 className="text-xs font-medium text-text-tertiary mb-3">
-            {t("manage.attachmentsCount", { count: post.post_attachments.length })}
-          </h2>
-          <div className="space-y-2">
-            {post.post_attachments.map((a) => (
-              <div key={a.id} className="flex items-center gap-3 rounded-lg bg-surface-2 p-3">
-                <span className="text-text-secondary">📎</span>
-                <span className="flex-1 text-sm text-text-primary truncate">{a.name}</span>
-                {a.size && <span className="text-xs text-text-tertiary">{formatBytes(a.size)}</span>}
-                {a.url ? (
-                  <a href={a.url} target="_blank" rel="noopener noreferrer" className="rounded-lg bg-primary/20 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/30">
-                    Download
+        <div className="space-y-4">
+          {/* Gallery thumbnail strip — clickable images */}
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {post.post_attachments.filter(a => a.url && /\.(jpg|jpeg|png|gif|webp|svg|bmp)(\?|$)/i.test(a.url)).length > 0 && (
+              <div className="flex gap-2">
+                {post.post_attachments.filter(a => a.url && /\.(jpg|jpeg|png|gif|webp|svg|bmp)(\?|$)/i.test(a.url)).map((a) => (
+                  <a key={a.id} href={a.url!} target="_blank" rel="noopener noreferrer" className="shrink-0 rounded-xl overflow-hidden bg-surface-3 hover:ring-1 hover:ring-primary/50 transition-all">
+                    <img src={a.url!} alt={a.name} className="h-24 w-24 object-cover" loading="lazy" />
                   </a>
-                ) : a.file_path ? (
-                  <span className="text-xs text-text-tertiary">{a.file_path}</span>
-                ) : null}
+                ))}
               </div>
-            ))}
+            )}
+          </div>
+
+          {/* Download zone — Pro Tool Dark style */}
+          <div className="rounded-2xl border border-white/5 bg-surface-1/80 p-5">
+            <h2 className="text-xs font-medium text-text-tertiary mb-3 flex items-center gap-2">
+              📦 {t("manage.attachments")} ({post.post_attachments.length})
+              <span className="rounded bg-green-500/10 px-1.5 py-0.5 text-[10px] text-green-400">Verified</span>
+            </h2>
+            <div className="space-y-1.5">
+              {post.post_attachments.map((a) => (
+                <div key={a.id} className="flex items-center gap-3 rounded-lg bg-surface-2 p-2.5 group hover:bg-surface-3 transition-colors">
+                  <span className="text-text-secondary shrink-0">📎</span>
+                  <span className="flex-1 text-sm text-text-primary truncate">{a.name}</span>
+                  {a.size && <span className="text-[10px] text-text-tertiary font-mono">{formatBytes(a.size)}</span>}
+                  {a.url ? (
+                    <a href={a.url} target="_blank" rel="noopener noreferrer" className="shrink-0 rounded-lg bg-primary/10 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
+                      ⬇ Download
+                    </a>
+                  ) : a.file_path ? (
+                    <span className="text-xs text-text-tertiary italic">{a.file_path}</span>
+                  ) : null}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

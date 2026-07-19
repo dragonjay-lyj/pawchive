@@ -62,6 +62,7 @@ export function CommentSection({ postId }: { postId: string }) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) return;
+    if (content.trim().length < 3) { setMsg(t("manage.commentTooShort")); return; }
     setMsg("");
     startTransition(async () => {
       try {
@@ -93,6 +94,9 @@ export function CommentSection({ postId }: { postId: string }) {
 
       {/* Comment form */}
       <form onSubmit={handleSubmit} className="glass rounded-2xl p-4 mb-6 space-y-3">
+        <div className="rounded-lg bg-yellow-500/5 border border-yellow-500/10 px-3 py-2 text-[11px] text-text-tertiary">
+          ⚠️ {t("manage.commentWarning")}
+        </div>
         {!user && (
           <div className="flex gap-2">
             <input
@@ -152,8 +156,9 @@ export function CommentSection({ postId }: { postId: string }) {
             const displayName = c.author_name ?? (c.user_id ? c.user_id.slice(0, 8) : t("manage.authorAnonymous"));
             const isAuthor = user && c.user_id === user.id;
 
+            const isGreat = c.content.length >= 100;
             return (
-              <div key={c.id} className="glass rounded-2xl p-4">
+              <div key={c.id} className={`glass rounded-2xl p-4 ${isGreat ? "ring-1 ring-yellow-500/30 bg-yellow-500/3" : ""}`}>
                 <div className="flex items-start gap-3">
                   {avatar ? (
                     <img src={avatar} alt="" className="h-8 w-8 rounded-full bg-surface-3 shrink-0" />
@@ -165,6 +170,9 @@ export function CommentSection({ postId }: { postId: string }) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-medium text-text-secondary">{displayName}</span>
+                      {isGreat && (
+                        <span className="rounded bg-yellow-500/20 px-1 py-0 text-[9px] text-yellow-400 font-medium">Great</span>
+                      )}
                       {isAuthor && (
                         <span className="rounded bg-primary/20 px-1 py-0 text-[9px] text-primary">you</span>
                       )}

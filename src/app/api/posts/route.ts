@@ -41,6 +41,8 @@ export async function POST(req: NextRequest) {
     content?: string;
     published?: string;
     is_new?: boolean;
+    tags?: string[];
+    source_url?: string;
     attachments?: {
       name: string;
       url?: string;
@@ -68,6 +70,7 @@ export async function POST(req: NextRequest) {
     content: body.content ?? null,
     published: body.published ?? null,
     is_new: body.is_new ?? (!body.post_id),
+    tags: body.tags ?? [],
     updated_at: new Date().toISOString(),
   };
 
