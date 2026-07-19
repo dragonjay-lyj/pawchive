@@ -56,6 +56,7 @@ export default function FavoritesPage() {
   const [error, setError] = useState<string | null>(null);
   const [authed, setAuthed] = useState(false);
   const [collections, setCollections] = useState<Collection[]>([]);
+  const [sortOrder, setSortOrder] = useState<"newest" | "updated">("newest");
 
   useEffect(() => {
     setCollections(listCollections());
@@ -182,20 +183,46 @@ export default function FavoritesPage() {
         {authed && !loading && !error && (
           <>
             {/* Bento — user-defined collections */}
+            {/* Sort toggle */}
+            <div className="mb-6 flex items-center gap-2">
+              <span className="text-xs text-text-tertiary">Sort:</span>
+              <button
+                onClick={() => setSortOrder("newest")}
+                className={`rounded-lg px-3 py-1 text-xs font-medium transition-all ${sortOrder === "newest" ? "bg-primary text-on-primary" : "bg-surface-2 text-text-secondary hover:bg-surface-3"}`}
+              >
+                Added
+              </button>
+              <button
+                onClick={() => setSortOrder("updated")}
+                className={`rounded-lg px-3 py-1 text-xs font-medium transition-all ${sortOrder === "updated" ? "bg-primary text-on-primary" : "bg-surface-2 text-text-secondary hover:bg-surface-3"}`}
+              >
+                Updated
+              </button>
+            </div>
+
+            {(() => {
+              const displayArtists = sortOrder === "updated"
+                ? [...artists].sort((a, b) => new Date((b.updated || b.last_imported || b.indexed)).getTime() - new Date((a.updated || a.last_imported || a.indexed)).getTime())
+                : artists;
+              const displayPosts = sortOrder === "updated"
+                ? [...posts].sort((a, b) => new Date((b.updated || b.last_imported || b.indexed)).getTime() - new Date((a.updated || a.last_imported || a.indexed)).getTime())
+                : posts;
+              return (
+                <>
             <CollectionsBento
               collections={collections}
-              artists={artists}
-              posts={posts}
+              artists={displayArtists}
+              posts={displayPosts}
             />
 
             {/* Favorite Creators */}
             <section className="mb-10">
-              <h2 className="mb-4 font-display text-xl">{t("fav.creators", { count: artists.length })}</h2>
-              {artists.length === 0 ? (
+              <h2 className="mb-4 font-display text-xl">{t("fav.creators", { count: displayArtists.length })}</h2>
+              {displayArtists.length === 0 ? (
                 <div className="glass rounded-2xl p-6 text-center"><p className="text-sm text-text-secondary">{t("fav.creators.none")}</p></div>
               ) : (
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                  {artists.map(fav => (
+                  {displayArtists.map(fav => (
                     <ArtistCard
                       key={fav.service + ":" + fav.id}
                       fav={fav}
@@ -208,12 +235,12 @@ export default function FavoritesPage() {
 
             {/* Favorite Posts */}
             <section>
-              <h2 className="mb-4 font-display text-xl">{t("fav.posts", { count: posts.length })}</h2>
-              {posts.length === 0 ? (
+              <h2 className="mb-4 font-display text-xl">{t("fav.posts", { count: displayPosts.length })}</h2>
+              {displayPosts.length === 0 ? (
                 <div className="glass rounded-2xl p-6 text-center"><p className="text-sm text-text-secondary">{t("fav.posts.none")}</p></div>
               ) : (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 sm:gap-4">
-                  {posts.map(fav => (
+                  {displayPosts.map(fav => (
                     <PostFavCard
                       key={fav.service + ":" + fav.id + ":" + fav.faved_seq}
                       fav={fav}
@@ -223,6 +250,10 @@ export default function FavoritesPage() {
                 </div>
               )}
             </section>
+                </>
+              );
+            })()}
+
           </>
         )}
       </main>
