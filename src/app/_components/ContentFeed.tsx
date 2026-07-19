@@ -6,7 +6,6 @@ import { useAuth } from "@/lib/supabase/auth-provider";
 import { useI18n } from "@/lib/i18n/provider";
 import { getServiceColor, getServiceLabel } from "@/lib/api";
 import { createClient } from "@supabase/supabase-js";
-import { renderMarkdown } from "@/lib/markdown";
 import MDEditor from "@uiw/react-md-editor";
 
 interface Attachment {
@@ -47,7 +46,6 @@ export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
   const [form, setForm] = useState<PostForm>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
-  const [preview, setPreview] = useState(false);
 
   // Collect all tags for filter bar
   const allTags = [...new Set(posts.flatMap((p) => p.tags ?? []))].sort();
@@ -127,8 +125,8 @@ export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
         <div className="flex items-center gap-2">
           {/* View toggle */}
           <div className="mica inline-flex rounded-lg border border-white/5 p-0.5">
-            <button onClick={() => setView("list")} className={`rounded-md px-3 py-1 text-xs font-medium transition-all ${view === "list" ? "bg-primary text-on-primary" : "text-text-secondary hover:text-text-primary"}`}>☰ List</button>
-            <button onClick={() => setView("gallery")} className={`rounded-md px-3 py-1 text-xs font-medium transition-all ${view === "gallery" ? "bg-primary text-on-primary" : "text-text-secondary hover:text-text-primary"}`}>⊞ Gallery</button>
+            <button onClick={() => setView("list")} className={`rounded-md px-3 py-1 text-xs font-medium transition-all ${view === "list" ? "bg-primary text-on-primary" : "text-text-secondary hover:text-text-primary"}`}>{t("manage.viewList")}</button>
+            <button onClick={() => setView("gallery")} className={`rounded-md px-3 py-1 text-xs font-medium transition-all ${view === "gallery" ? "bg-primary text-on-primary" : "text-text-secondary hover:text-text-primary"}`}>{t("manage.viewGallery")}</button>
           </div>
           {user && !showForm && (
             <button onClick={openNew} className="neo-badge rounded-xl px-4 py-2 text-sm font-bold text-primary hover:bg-surface-2">
@@ -144,7 +142,7 @@ export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
           <button
             onClick={() => setActiveTag(null)}
             className={`rounded-lg px-3 py-1 text-xs font-medium transition-all ${!activeTag ? "bg-primary text-on-primary" : "bg-surface-2 text-text-secondary hover:bg-surface-3"}`}
-          >All</button>
+          >{t("manage.filterAll")}</button>
           {allTags.map((tag) => (
             <button
               key={tag}
@@ -159,7 +157,7 @@ export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
       {showForm && (
         <div className="glass rounded-2xl p-5 mb-6">
           <div className="mb-3 rounded-lg bg-surface-2 px-4 py-2 text-[11px] text-text-tertiary">
-            ⚡ Markdown supported · Tags help others find your post · Be respectful
+             ⚡ {t("manage.editorHint")}
           </div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-medium">{editingId ? t("manage.editPost") : t("manage.newPostTitle")}</h2>
@@ -190,9 +188,9 @@ export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
                    }
                  }}
                >
-                 📤 Drag & drop images here or{" "}
+                 📤 {t("manage.dragDropHint")}{" "}
                  <label className="text-primary cursor-pointer hover:underline">
-                   browse
+                   {t("manage.browse")}
                    <input type="file" accept="image/*" multiple className="hidden"
                      onChange={async (e) => {
                        const files = Array.from(e.target.files || []);

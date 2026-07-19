@@ -160,7 +160,10 @@ export function PostDetail({ post, error: initError }: { post: UserPost | null; 
 
       {post.content && (
         <div className="glass rounded-2xl p-6 mb-6">
-          <h2 className="text-xs font-medium text-text-tertiary mb-3">{t("manage.description")}</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs font-medium text-text-tertiary">{t("manage.description")}</h2>
+            <PostTranslateButton text={post.content} />
+          </div>
           <div className="prose prose-sm prose-invert max-w-none text-sm leading-relaxed text-text-primary [&_a]:text-primary [&_code]:bg-surface-3 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-surface-2 [&_pre]:p-2 [&_pre]:rounded-lg [&_blockquote]:border-primary/30 [&_img]:max-w-full [&_img]:rounded-lg"
             dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }} />
         </div>
@@ -219,6 +222,52 @@ export function PostDetail({ post, error: initError }: { post: UserPost | null; 
         />
       )}
     </main>
+  );
+}
+
+/** Inline translate button for post content — calls /api/translate via DeepLX. */
+function PostTranslateButton({ text }: { text: string }) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const [translated, setTranslated] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  const doTranslate = async () => {
+    if (translated) { setOpen(true); return; }
+    setLoading(true); setErr("");
+    try {
+      const res = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: text.slice(0, 2000), source_lang: "AUTO", target_lang: "ZH" }),
+      });
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const json = await res.json();
+      if (json.data) { setTranslated(json.data); setOpen(true); }
+      else setErr(json.error ?? "failed");
+    } catch (e) { setErr(e instanceof Error ? e.message : "failed"); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <>
+      <button onClick={doTranslate} disabled={loading} className="rounded-lg bg-surface-3 px-2 py-1 text-[10px] text-text-tertiary hover:bg-surface-4 hover:text-text-secondary disabled:opacity-50">
+        {loading ? "…" : `🌐 ${t("manage.translate")}`}
+      </button>
+      {err && <span className="text-[10px] text-error ml-1">{err}</span>}
+      {open && translated && (
+        <div className="fixed inset-0 z-[120] flex items-start justify-center overflow-y-auto bg-black/70 backdrop-blur-sm pt-12 pb-12" onClick={() => setOpen(false)}>
+          <div className="glass-strong mx-4 w-full max-w-lg rounded-2xl p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-medium">{t("manage.translate")}</h3>
+              <button onClick={() => setOpen(false)} className="text-text-tertiary hover:text-text-primary">✕</button>
+            </div>
+            <div className="prose prose-sm prose-invert max-w-none text-sm leading-relaxed text-text-primary whitespace-pre-wrap">{translated}</div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
