@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/supabase/auth-provider";
 import { useI18n } from "@/lib/i18n/provider";
 import { getServiceColor, getServiceLabel } from "@/lib/api";
 import { CommentSection } from "@/app/_components/CommentSection";
+import { PostLightbox } from "@/app/_components/PostLightbox";
 
 interface Attachment {
   id: string;
@@ -45,6 +46,7 @@ export function PostDetail({ post, error: initError }: { post: UserPost | null; 
 
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(initError);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const isAuthor = user && post && user.id === post.user_id;
 
@@ -161,10 +163,10 @@ export function PostDetail({ post, error: initError }: { post: UserPost | null; 
           <div className="flex gap-2 overflow-x-auto pb-2">
             {post.post_attachments.filter(a => a.url && /\.(jpg|jpeg|png|gif|webp|svg|bmp)(\?|$)/i.test(a.url)).length > 0 && (
               <div className="flex gap-2">
-                {post.post_attachments.filter(a => a.url && /\.(jpg|jpeg|png|gif|webp|svg|bmp)(\?|$)/i.test(a.url)).map((a) => (
-                  <a key={a.id} href={a.url!} target="_blank" rel="noopener noreferrer" className="shrink-0 rounded-xl overflow-hidden bg-surface-3 hover:ring-1 hover:ring-primary/50 transition-all">
+                {post.post_attachments.filter(a => a.url && /\.(jpg|jpeg|png|gif|webp|svg|bmp)(\?|$)/i.test(a.url)).map((a, idx) => (
+                  <button key={a.id} onClick={() => setLightboxIndex(idx)} className="shrink-0 rounded-xl overflow-hidden bg-surface-3 hover:ring-1 hover:ring-primary/50 transition-all">
                     <img src={a.url!} alt={a.name} className="h-24 w-24 object-cover" loading="lazy" />
-                  </a>
+                  </button>
                 ))}
               </div>
             )}
@@ -197,6 +199,16 @@ export function PostDetail({ post, error: initError }: { post: UserPost | null; 
       )}
 
       <CommentSection postId={post.id} />
+
+      {lightboxIndex !== null && (
+        <PostLightbox
+          images={post.post_attachments
+            .filter(a => a.url && /\.(jpg|jpeg|png|gif|webp|svg|bmp)(\?|$)/i.test(a.url))
+            .map(a => ({ url: a.url!, name: a.name }))}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
     </main>
   );
 }

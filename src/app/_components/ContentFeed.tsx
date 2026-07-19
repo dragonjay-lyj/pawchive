@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/supabase/auth-provider";
 import { useI18n } from "@/lib/i18n/provider";
 import { getServiceColor, getServiceLabel } from "@/lib/api";
+import { createClient } from "@supabase/supabase-js";
 
 interface Attachment {
   id: string; name: string; url: string | null; file_path: string | null; size: number | null;
@@ -112,6 +113,10 @@ export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
 
   return (
     <main className="mx-auto max-w-[1200px] px-4 pb-24 pt-8">
+
+      {/* Board announcement — Swiss style */}
+      <BoardAnnouncement />
+
       {/* Header */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-2xl font-bold">{t("manage.community")}</h1>
@@ -271,5 +276,26 @@ export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
         </div>
       )}
     </main>
+  );
+}
+
+/** Board announcement — reads from site_config, Swiss design */
+function BoardAnnouncement() {
+  const [msg, setMsg] = useState("");
+  useEffect(() => {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    void (async () => {
+      const { data } = await supabase.from("site_config").select("ai_search_endpoint").eq("id", 1).single();
+      if (data?.ai_search_endpoint) setMsg(data.ai_search_endpoint);
+    })();
+  }, []);
+  if (!msg) return null;
+  return (
+    <div className="mb-5 rounded-2xl border border-blue-500/20 bg-blue-500/5 px-5 py-3 text-sm text-text-secondary">
+      📢 {msg}
+    </div>
   );
 }

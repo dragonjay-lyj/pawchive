@@ -197,6 +197,18 @@ export function CommentSection({ postId }: { postId: string }) {
                         {new Date(c.created_at).toLocaleDateString()}
                       </span>
                     </div>
+                    {/* Reply button */}
+                    <button
+                      onClick={() => {
+                        const quote = `> ${c.content.slice(0, 120).replace(/\n/g, "\n> ")}\n\n`;
+                        setContent((prev) => prev ? prev + "\n" + quote : quote);
+                        const el = document.querySelector("textarea[placeholder]") as HTMLTextAreaElement;
+                        el?.focus();
+                      }}
+                      className="text-[10px] text-text-tertiary hover:text-primary transition-colors"
+                    >
+                      ↩ Reply
+                    </button>
                     <div
                       className="prose prose-sm prose-invert max-w-none text-sm leading-relaxed text-text-primary [&_a]:text-primary [&_code]:bg-surface-3 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-surface-2 [&_pre]:p-2 [&_pre]:rounded-lg [&_blockquote]:border-primary/30 [&_img]:max-w-[80px] [&_img]:inline"
                       dangerouslySetInnerHTML={{ __html: renderMarkdown(c.content) }}
