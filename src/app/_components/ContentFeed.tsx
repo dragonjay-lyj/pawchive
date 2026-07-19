@@ -7,6 +7,7 @@ import { useI18n } from "@/lib/i18n/provider";
 import { getServiceColor, getServiceLabel } from "@/lib/api";
 import { createClient } from "@supabase/supabase-js";
 import { renderMarkdown } from "@/lib/markdown";
+import MDEditor from "@uiw/react-md-editor";
 
 interface Attachment {
   id: string; name: string; url: string | null; file_path: string | null; size: number | null;
@@ -167,36 +168,58 @@ export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
           <form onSubmit={handleSave} className="space-y-4">
             <input type="text" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} required placeholder={t("manage.titleField")}
               className="w-full rounded-xl border border-white/5 bg-surface-2 px-3 py-2.5 text-base font-medium text-text-primary placeholder:text-text-tertiary focus:border-primary/30 focus:outline-none" />
-             <textarea value={form.content}
-               onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
-               onPaste={(e) => {
-                 const items = e.clipboardData.items;
-                 for (const item of items) {
-                   if (item.type.startsWith("image/")) {
-                     e.preventDefault();
-                     const file = item.getAsFile();
-                     if (!file) continue;
-                     const reader = new FileReader();
-                     reader.onload = () => {
-                       setForm((f) => ({ ...f, content: f.content + `\n![image](${reader.result as string})\n` }));
-                     };
-                     reader.readAsDataURL(file);
-                     break;
+             {/* Rich Markdown editor */}
+             <div className="space-y-2">
+               <div
+                 className="rounded-xl border border-dashed border-white/10 bg-surface-2/50 p-4 text-center text-xs text-text-tertiary hover:border-primary/30 transition-colors"
+                 onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-primary/50"); }}
+                 onDragLeave={(e) => e.currentTarget.classList.remove("border-primary/50")}
+                 onDrop={async (e) => {
+                   e.preventDefault();
+                   e.currentTarget.classList.remove("border-primary/50");
+                   const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"));
+                   for (const file of files) {
+                     const fd = new FormData(); fd.append("file", file);
+                     try {
+                       const res = await fetch("/api/upload", { method: "POST", body: fd });
+                       if (res.ok) {
+                         const json = await res.json();
+                         setForm((f) => ({ ...f, content: f.content + `\n![${file.name}](${json.url})\n` }));
+                       }
+                     } catch {}
                    }
-                 }
-               }}
-               rows={preview ? 3 : 5} placeholder={t("manage.postContent")}
-               className="w-full rounded-xl border border-white/5 bg-surface-2 px-3 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary/30 focus:outline-none resize-y" />
-             <div className="flex items-center gap-2 text-xs">
-               <button type="button" onClick={() => setPreview(!preview)} className={`rounded-lg px-2 py-1 ${preview ? "bg-primary/20 text-primary" : "text-text-tertiary hover:text-text-secondary"}`}>
-                 {preview ? "✏️ Edit" : "👁 Preview"}
-               </button>
-               <span className="text-text-tertiary">· Drag images or paste from clipboard</span>
+                 }}
+               >
+                 📤 Drag & drop images here or{" "}
+                 <label className="text-primary cursor-pointer hover:underline">
+                   browse
+                   <input type="file" accept="image/*" multiple className="hidden"
+                     onChange={async (e) => {
+                       const files = Array.from(e.target.files || []);
+                       for (const file of files) {
+                         const fd = new FormData(); fd.append("file", file);
+                         try {
+                           const res = await fetch("/api/upload", { method: "POST", body: fd });
+                           if (res.ok) {
+                             const json = await res.json();
+                             setForm((f) => ({ ...f, content: f.content + `\n![${file.name}](${json.url})\n` }));
+                           }
+                         } catch {}
+                       }
+                     }}
+                   />
+                 </label>
+                 {" "}→ Cloudinary
+               </div>
+               <div data-color-mode="dark">
+                 <MDEditor
+                   value={form.content}
+                   onChange={(val) => setForm((f) => ({ ...f, content: val || "" }))}
+                   preview="edit"
+                   height={200}
+                 />
+               </div>
              </div>
-             {preview && form.content && (
-               <div className="rounded-xl border border-white/5 bg-surface-2 p-4 min-h-[100px] prose prose-sm prose-invert max-w-none text-sm leading-relaxed text-text-primary [&_a]:text-primary [&_code]:bg-surface-3 [&_code]:px-1 [&_code]:rounded"
-                 dangerouslySetInnerHTML={{ __html: renderMarkdown(form.content) }} />
-             )}
             <div className="flex gap-2">
               <select value={form.service} onChange={(e) => setForm((f) => ({ ...f, service: e.target.value }))}
                 className="rounded-xl border border-white/5 bg-surface-2 px-3 py-2 text-sm text-text-primary focus:border-primary/30 focus:outline-none">
