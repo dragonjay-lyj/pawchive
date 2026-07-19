@@ -8,6 +8,7 @@ import { useI18n } from "@/lib/i18n/provider";
 import { getServiceColor, getServiceLabel } from "@/lib/api";
 import { CommentSection } from "@/app/_components/CommentSection";
 import { PostLightbox } from "@/app/_components/PostLightbox";
+import { renderMarkdown } from "@/lib/markdown";
 
 interface Attachment {
   id: string;
@@ -160,7 +161,8 @@ export function PostDetail({ post, error: initError }: { post: UserPost | null; 
       {post.content && (
         <div className="glass rounded-2xl p-6 mb-6">
           <h2 className="text-xs font-medium text-text-tertiary mb-3">{t("manage.description")}</h2>
-          <div className="text-sm text-text-primary leading-relaxed whitespace-pre-wrap">{post.content}</div>
+          <div className="prose prose-sm prose-invert max-w-none text-sm leading-relaxed text-text-primary [&_a]:text-primary [&_code]:bg-surface-3 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-surface-2 [&_pre]:p-2 [&_pre]:rounded-lg [&_blockquote]:border-primary/30 [&_img]:max-w-full [&_img]:rounded-lg"
+            dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }} />
         </div>
       )}
 

@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/supabase/auth-provider";
 import { useI18n } from "@/lib/i18n/provider";
 import { getServiceColor, getServiceLabel } from "@/lib/api";
 import { createClient } from "@supabase/supabase-js";
+import { renderMarkdown } from "@/lib/markdown";
 
 interface Attachment {
   id: string; name: string; url: string | null; file_path: string | null; size: number | null;
@@ -45,6 +46,7 @@ export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
   const [form, setForm] = useState<PostForm>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
+  const [preview, setPreview] = useState(false);
 
   // Collect all tags for filter bar
   const allTags = [...new Set(posts.flatMap((p) => p.tags ?? []))].sort();
@@ -165,8 +167,36 @@ export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
           <form onSubmit={handleSave} className="space-y-4">
             <input type="text" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} required placeholder={t("manage.titleField")}
               className="w-full rounded-xl border border-white/5 bg-surface-2 px-3 py-2.5 text-base font-medium text-text-primary placeholder:text-text-tertiary focus:border-primary/30 focus:outline-none" />
-            <textarea value={form.content} onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))} rows={4} placeholder={t("manage.postContent")}
-              className="w-full rounded-xl border border-white/5 bg-surface-2 px-3 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary/30 focus:outline-none resize-y" />
+             <textarea value={form.content}
+               onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
+               onPaste={(e) => {
+                 const items = e.clipboardData.items;
+                 for (const item of items) {
+                   if (item.type.startsWith("image/")) {
+                     e.preventDefault();
+                     const file = item.getAsFile();
+                     if (!file) continue;
+                     const reader = new FileReader();
+                     reader.onload = () => {
+                       setForm((f) => ({ ...f, content: f.content + `\n![image](${reader.result as string})\n` }));
+                     };
+                     reader.readAsDataURL(file);
+                     break;
+                   }
+                 }
+               }}
+               rows={preview ? 3 : 5} placeholder={t("manage.postContent")}
+               className="w-full rounded-xl border border-white/5 bg-surface-2 px-3 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary/30 focus:outline-none resize-y" />
+             <div className="flex items-center gap-2 text-xs">
+               <button type="button" onClick={() => setPreview(!preview)} className={`rounded-lg px-2 py-1 ${preview ? "bg-primary/20 text-primary" : "text-text-tertiary hover:text-text-secondary"}`}>
+                 {preview ? "✏️ Edit" : "👁 Preview"}
+               </button>
+               <span className="text-text-tertiary">· Drag images or paste from clipboard</span>
+             </div>
+             {preview && form.content && (
+               <div className="rounded-xl border border-white/5 bg-surface-2 p-4 min-h-[100px] prose prose-sm prose-invert max-w-none text-sm leading-relaxed text-text-primary [&_a]:text-primary [&_code]:bg-surface-3 [&_code]:px-1 [&_code]:rounded"
+                 dangerouslySetInnerHTML={{ __html: renderMarkdown(form.content) }} />
+             )}
             <div className="flex gap-2">
               <select value={form.service} onChange={(e) => setForm((f) => ({ ...f, service: e.target.value }))}
                 className="rounded-xl border border-white/5 bg-surface-2 px-3 py-2 text-sm text-text-primary focus:border-primary/30 focus:outline-none">
