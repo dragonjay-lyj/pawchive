@@ -117,7 +117,7 @@ export function PostDetail({ post, error: initError }: { post: UserPost | null; 
 
       {post.is_nsfw && (
         <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-2 text-xs text-red-400">
-          🔞 This post contains sensitive / NSFW content.
+          🔞 {t("manage.nsfw")}
         </div>
       )}
 
@@ -139,7 +139,7 @@ export function PostDetail({ post, error: initError }: { post: UserPost | null; 
           }}
           className="ml-auto rounded-lg bg-surface-3 px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-surface-4 transition-colors"
         >
-          ❤️ {post.thanks_count ?? 0} Thanks
+           ❤️ {post.thanks_count ?? 0} {t("manage.thanks")}
         </button>
       </div>
 
@@ -188,7 +188,7 @@ export function PostDetail({ post, error: initError }: { post: UserPost | null; 
           <div className="rounded-2xl border border-white/5 bg-surface-1/80 p-5">
             <h2 className="text-xs font-medium text-text-tertiary mb-3 flex items-center gap-2">
               📦 {t("manage.attachments")} ({post.post_attachments.length})
-              <span className="rounded bg-green-500/10 px-1.5 py-0.5 text-[10px] text-green-400">Verified</span>
+              <span className="rounded bg-green-500/10 px-1.5 py-0.5 text-[10px] text-green-400">{t("manage.verified")}</span>
             </h2>
             <div className="space-y-1.5">
               {post.post_attachments.map((a) => (
@@ -198,7 +198,7 @@ export function PostDetail({ post, error: initError }: { post: UserPost | null; 
                   {a.size && <span className="text-[10px] text-text-tertiary font-mono">{formatBytes(a.size)}</span>}
                   {a.url ? (
                     <a href={a.url} target="_blank" rel="noopener noreferrer" className="shrink-0 rounded-lg bg-primary/10 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
-                      ⬇ Download
+                      ⬇ {t("manage.download")}
                     </a>
                   ) : a.file_path ? (
                     <span className="text-xs text-text-tertiary italic">{a.file_path}</span>

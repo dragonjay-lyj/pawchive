@@ -182,21 +182,20 @@ export default function FavoritesPage() {
 
         {authed && !loading && !error && (
           <>
-            {/* Bento — user-defined collections */}
             {/* Sort toggle */}
             <div className="mb-6 flex items-center gap-2">
-              <span className="text-xs text-text-tertiary">{t("fav.sort")}:</span>
+              <span className="text-xs text-text-tertiary">{t("fav.sortBy")}:</span>
               <button
                 onClick={() => setSortOrder("newest")}
                 className={`rounded-lg px-3 py-1 text-xs font-medium transition-all ${sortOrder === "newest" ? "bg-primary text-on-primary" : "bg-surface-2 text-text-secondary hover:bg-surface-3"}`}
               >
-                {t("fav.sortAdded")}
+                {t("manage.sortNewest")}
               </button>
               <button
                 onClick={() => setSortOrder("updated")}
                 className={`rounded-lg px-3 py-1 text-xs font-medium transition-all ${sortOrder === "updated" ? "bg-primary text-on-primary" : "bg-surface-2 text-text-secondary hover:bg-surface-3"}`}
               >
-                {t("fav.sortUpdated")}
+                {t("manage.sortUpdated")}
               </button>
             </div>
 
