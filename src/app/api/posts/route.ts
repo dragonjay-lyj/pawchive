@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
     is_new?: boolean;
     tags?: string[];
     source_url?: string;
+    is_nsfw?: boolean;
     attachments?: {
       name: string;
       url?: string;
@@ -71,6 +72,7 @@ export async function POST(req: NextRequest) {
     published: body.published ?? null,
     is_new: body.is_new ?? (!body.post_id),
     tags: body.tags ?? [],
+    is_nsfw: body.is_nsfw ?? false,
     updated_at: new Date().toISOString(),
   };
 

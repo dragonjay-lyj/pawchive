@@ -14,7 +14,7 @@ interface Attachment {
 interface UserPost {
   id: string; user_id: string; service: string; creator_id: string; post_id: string | null;
   title: string; content: string | null; published: string | null; is_new: boolean;
-  is_pinned?: boolean; tags?: string[]; thanks_count?: number;
+  is_pinned?: boolean; tags?: string[]; thanks_count?: number; is_nsfw?: boolean;
   created_at: string; updated_at: string; post_attachments: Attachment[];
   post_comments?: { count: number }[];
   profiles?: { username: string | null } | null;
@@ -26,11 +26,11 @@ type ViewMode = "list" | "gallery";
 interface PostForm {
   service: string; creator_id: string; post_id: string;
   title: string; content: string; published: string;
-  tags: string; sourceUrl: string;
+  tags: string; sourceUrl: string; isNsfw: boolean;
   attachments: { name: string; url: string; file_path: string; size: string }[];
 }
 
-const emptyForm: PostForm = { service: "patreon", creator_id: "", post_id: "", title: "", content: "", published: "", tags: "", sourceUrl: "", attachments: [] };
+const emptyForm: PostForm = { service: "patreon", creator_id: "", post_id: "", title: "", content: "", published: "", tags: "", sourceUrl: "", isNsfw: false, attachments: [] };
 
 export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
   const { t } = useI18n();
@@ -75,7 +75,7 @@ export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
     setForm({
       service: p.service, creator_id: p.creator_id, post_id: p.post_id ?? "",
       title: p.title, content: p.content ?? "", published: p.published?.slice(0, 16) ?? "",
-      tags: (p.tags ?? []).join(", "), sourceUrl: "",
+      tags: (p.tags ?? []).join(", "), sourceUrl: "", isNsfw: p.is_nsfw ?? false,
       attachments: (p.post_attachments ?? []).map((a) => ({ name: a.name, url: a.url ?? "", file_path: a.file_path ?? "", size: a.size?.toString() ?? "" })),
     });
     setEditingId(p.id); setShowForm(true); setSaveMsg("");
@@ -96,6 +96,7 @@ export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
         published: form.published || undefined,
         tags: form.tags ? form.tags.split(",").map((s) => s.trim()).filter(Boolean) : [],
         source_url: form.sourceUrl || undefined,
+        is_nsfw: form.isNsfw,
         attachments: form.attachments.filter((a) => a.name).map((a) => ({
           name: a.name, url: a.url || undefined, file_path: a.file_path || undefined,
           size: a.size ? parseInt(a.size, 10) || undefined : undefined,
@@ -154,6 +155,9 @@ export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
       {/* Inline form */}
       {showForm && (
         <div className="glass rounded-2xl p-5 mb-6">
+          <div className="mb-3 rounded-lg bg-surface-2 px-4 py-2 text-[11px] text-text-tertiary">
+            ⚡ Markdown supported · Tags help others find your post · Be respectful
+          </div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-medium">{editingId ? t("manage.editPost") : t("manage.newPostTitle")}</h2>
             <button onClick={() => setShowForm(false)} className="text-text-tertiary hover:text-text-primary">✕</button>
@@ -177,6 +181,11 @@ export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
               <input type="text" value={form.tags} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))} placeholder={t("manage.tagsPlaceholder")}
                 className="w-40 rounded-xl border border-white/5 bg-surface-2 px-3 py-2 text-xs text-text-primary placeholder:text-text-tertiary focus:border-primary/30 focus:outline-none" />
             </div>
+            <label className="flex items-center gap-2 text-xs text-text-tertiary cursor-pointer">
+              <input type="checkbox" checked={form.isNsfw} onChange={(e) => setForm((f) => ({ ...f, isNsfw: e.target.checked }))}
+                className="rounded border-white/10 bg-surface-2 text-red-500 focus:ring-red-500/30" />
+              🔞 NSFW / Sensitive content
+            </label>
             <details className="text-xs"><summary className="cursor-pointer text-text-tertiary hover:text-text-secondary">{t("manage.attachments")} ({form.attachments.filter(a => a.name).length})</summary>
               <div className="mt-2 space-y-2">
                 {form.attachments.map((a, i) => (
@@ -212,12 +221,13 @@ export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
             <article key={p.id} className="glass rounded-2xl p-4 cursor-pointer hover:bg-surface-2 transition-colors flex gap-4"
               onClick={() => router.push(`/manage/${p.id}`)}>
               {/* Thumbnail */}
-              <div className="hidden sm:block shrink-0 w-20 h-20 rounded-xl bg-surface-3 overflow-hidden">
+              <div className="hidden sm:block shrink-0 w-20 h-20 rounded-xl bg-surface-3 overflow-hidden relative">
                 {p.post_attachments?.[0]?.url ? (
-                  <img src={p.post_attachments[0].url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                  <img src={p.post_attachments[0].url} alt="" className={`w-full h-full object-cover ${p.is_nsfw ? "blur-xl" : ""}`} loading="lazy" />
                 ) : (
                   <div className="flex items-center justify-center h-full text-text-tertiary text-lg">📄</div>
                 )}
+                {p.is_nsfw && <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-red-400 bg-black/30">NSFW</span>}
               </div>
               {/* Content */}
               <div className="flex-1 min-w-0">
@@ -260,10 +270,11 @@ export function ContentFeed({ initialPosts }: { initialPosts: UserPost[] }) {
               onClick={() => router.push(`/manage/${p.id}`)}>
               <div className="relative bg-surface-3">
                 {p.post_attachments?.[0]?.url ? (
-                  <img src={p.post_attachments[0].url} alt={p.title} className="w-full object-cover" loading="lazy" />
+                  <img src={p.post_attachments[0].url} alt={p.title} className={`w-full object-cover ${p.is_nsfw ? "blur-lg" : ""}`} loading="lazy" />
                 ) : (
                   <div className="flex items-center justify-center aspect-[4/3] bg-surface-2 text-text-tertiary text-2xl">📄</div>
                 )}
+                {p.is_nsfw && <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-red-400 bg-black/40">🔞 NSFW</span>}
                 {/* Hover overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
                   <p className="text-xs font-semibold text-white truncate">{p.title}</p>

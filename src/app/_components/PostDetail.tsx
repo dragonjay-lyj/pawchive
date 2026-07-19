@@ -31,6 +31,7 @@ interface UserPost {
   tags?: string[];
   thanks_count?: number;
   source_url?: string;
+  is_nsfw?: boolean;
   created_at: string;
   updated_at: string;
   post_attachments: Attachment[];
@@ -112,6 +113,12 @@ export function PostDetail({ post, error: initError }: { post: UserPost | null; 
           )}
         </div>
       </div>
+
+      {post.is_nsfw && (
+        <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-2 text-xs text-red-400">
+          🔞 This post contains sensitive / NSFW content.
+        </div>
+      )}
 
       {/* Tags + source + thanks row */}
       <div className="flex flex-wrap items-center gap-2 mb-6">

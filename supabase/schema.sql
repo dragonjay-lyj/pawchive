@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS user_posts (
   is_pinned     BOOLEAN NOT NULL DEFAULT false,  -- pinned to top
   tags          TEXT[] DEFAULT '{}',             -- filter chips: e.g. {resource,question,guide}
   thanks_count  INTEGER NOT NULL DEFAULT 0,      -- cached like count
+  is_nsfw       BOOLEAN NOT NULL DEFAULT false,  -- sensitive content flag
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
