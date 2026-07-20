@@ -56,31 +56,19 @@ function dedupe(posts: Post[]): Post[] {
   return out;
 }
 
-// Upstream /posts doesn't implement q= filtering — we page through recent posts
-// and match locally against title/content.
+// Upstream pawchive.pw supports server-side q= search on /api/v1/posts,
+// so we query it directly (fast) and page with offset. Advanced filters
+// (platform / file type / date) refine the returned results client-side.
 const PAGE_SIZE = 50;
-const INITIAL_PAGES = 20; // 1,000 posts prefetch (5 concurrent batches of 4)
-// No hard cap — scan until the upstream API returns empty (reachedEnd).
-// The reachedEnd flag from getRecentPosts handles stopping naturally.
-
-function matches(post: Post, q: string): boolean {
-  const needle = q.toLowerCase();
-  if (post.title?.toLowerCase().includes(needle)) return true;
-  if (post.content?.toLowerCase().includes(needle)) return true;
-  if (post.substring?.toLowerCase().includes(needle)) return true;
-  if (post.attachments?.some(a => a.name?.toLowerCase().includes(needle))) return true;
-  if (post.file?.name?.toLowerCase().includes(needle)) return true;
-  return false;
-}
 
 export default function SearchPage() {
   const { t } = useI18n();
   const [tab, setTab] = useState<Tab>("standard");
   const [query, setQuery] = useState("");
-  const [pool, setPool] = useState<Post[]>([]); // fetched pool (unfiltered)
+  const [pool, setPool] = useState<Post[]>([]); // server search results
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [scannedPages, setScannedPages] = useState(0);
+  const [offset, setOffset] = useState(0);
   const [reachedEnd, setReachedEnd] = useState(false);
   const [searched, setSearched] = useState(false);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
@@ -88,54 +76,43 @@ export default function SearchPage() {
   const loaderRef = useRef<HTMLDivElement>(null);
   const activeQueryRef = useRef<string>("");
 
-  // Fetch more pages into the pool
-  const CONCURRENT = 4; // fetch 4 pages (200 posts) in parallel
-
-  const fetchMore = async (targetPages: number): Promise<Post[]> => {
-    let acc: Post[] = [];
-    let localReachedEnd = reachedEnd;
-    let currentScanned = scannedPages;
-
-    while (currentScanned < targetPages && !localReachedEnd) {
-      // Build offsets for concurrent batch
-      const offsets: number[] = [];
-      const end = Math.min(targetPages, currentScanned + CONCURRENT);
-      for (let i = currentScanned; i < end && !localReachedEnd; i++) {
-        offsets.push(i * PAGE_SIZE);
-      }
-
-      const batches = await Promise.all(
-        offsets.map((o) => getRecentPosts({ o }))
-      );
-
-      for (const batch of batches) {
-        if (batch.length === 0) { localReachedEnd = true; break; }
-        acc = [...acc, ...batch];
-        currentScanned++;
-        if (batch.length < PAGE_SIZE) { localReachedEnd = true; break; }
-      }
-    }
-    setScannedPages(currentScanned);
-    if (localReachedEnd) setReachedEnd(true);
-    return acc;
-  };
-
+  // Run a fresh server-side search for the given query.
   const runSearch = async (q: string) => {
     activeQueryRef.current = q;
     setLoading(true);
     setError(null);
     setSearched(true);
-
+    setPool([]);
+    setOffset(0);
+    setReachedEnd(false);
     try {
-      if (pool.length < INITIAL_PAGES * PAGE_SIZE && !reachedEnd) {
-        const extra = await fetchMore(INITIAL_PAGES);
-        if (activeQueryRef.current !== q) return;
-        setPool((prev) => dedupe([...prev, ...extra]));
-      }
+      const results = await getRecentPosts({ q, o: 0 });
+      if (activeQueryRef.current !== q) return; // superseded by newer query
+      setPool(dedupe(results));
+      setOffset(PAGE_SIZE);
+      if (results.length < PAGE_SIZE) setReachedEnd(true);
     } catch {
-      setError("Failed to fetch posts.");
+      if (activeQueryRef.current === q) setError("Search failed. Please try again.");
     } finally {
       if (activeQueryRef.current === q) setLoading(false);
+    }
+  };
+
+  // Load the next page of the current query.
+  const loadMore = async () => {
+    const q = query.trim();
+    if (!q || loading || reachedEnd) return;
+    setLoading(true);
+    try {
+      const results = await getRecentPosts({ q, o: offset });
+      if (activeQueryRef.current !== q) return;
+      setPool((prev) => dedupe([...prev, ...results]));
+      setOffset((o) => o + PAGE_SIZE);
+      if (results.length < PAGE_SIZE) setReachedEnd(true);
+    } catch {
+      setError("Failed to load more.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -144,6 +121,8 @@ export default function SearchPage() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (!query.trim()) {
       setSearched(false);
+      setPool([]);
+      setReachedEnd(false);
       return;
     }
     debounceRef.current = setTimeout(() => {
@@ -153,12 +132,10 @@ export default function SearchPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
-  // Client-side filtering with live query matching
+  // Advanced filters refine the server results client-side.
   const filtered = useMemo(() => {
-    const q = query.trim();
-    if (!q) return [];
+    if (!query.trim()) return [];
     return pool.filter((p) => {
-      if (!matches(p, q)) return false;
       if (filters.platforms.size && !filters.platforms.has(p.service as ServiceType)) return false;
       if (filters.fileTypes.size) {
         const all = [p.file, ...p.attachments].filter(Boolean);
@@ -176,26 +153,12 @@ export default function SearchPage() {
     });
   }, [pool, query, filters]);
 
-  // "Scan more" — expand the pool
-  const scanMore = async () => {
-    if (loading || reachedEnd) return;
-    setLoading(true);
-    try {
-      const extra = await fetchMore(scannedPages + 10); // +500 posts per scroll trigger
-      setPool((prev) => dedupe([...prev, ...extra]));
-    } catch {
-      setError("Failed to load more.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Infinite scroll to auto-scan
+  // Infinite scroll → load next page of the query
   useEffect(() => {
     if (!query.trim() || loading || reachedEnd) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) scanMore();
+        if (entries[0].isIntersecting) loadMore();
       },
       { threshold: 0.1 }
     );
@@ -203,7 +166,7 @@ export default function SearchPage() {
     if (el) observer.observe(el);
     return () => { if (el) observer.unobserve(el); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, loading, reachedEnd, scannedPages]);
+  }, [query, loading, reachedEnd, offset]);
 
   const activeFilterCount =
     filters.platforms.size +
@@ -212,7 +175,7 @@ export default function SearchPage() {
     (filters.dateTo ? 1 : 0) +
     (filters.requireAttachments ? 1 : 0);
 
-  const scannedCount = pool.length;
+  const loadedCount = pool.length;
 
   const togglePlatform = (p: ServiceType) => {
     setFilters((f) => {
@@ -299,15 +262,6 @@ export default function SearchPage() {
                 />
               )}
 
-              {/* Info banner — client-side search caveat */}
-              {searched && (
-                <div className="mica mb-4 rounded-xl border border-white/5 px-4 py-2 text-[11px] text-text-tertiary">
-                  {t("search.caveat")}{" "}
-                  {t("search.scanned", { count: scannedCount.toLocaleString("en-US") })}
-                  {reachedEnd && ` ${t("search.scanned.all")}`}
-                </div>
-              )}
-
               {error && <div className="glass rounded-2xl p-4 text-center text-sm text-error mb-6">{error}</div>}
               {loading && pool.length === 0 && searched && (
                 <div className="space-y-4">
@@ -325,20 +279,14 @@ export default function SearchPage() {
               {!loading && searched && filtered.length === 0 && query.trim() && (
                 <div className="glass rounded-2xl p-12 text-center">
                   <p className="text-text-secondary">
-                    {t("search.noMatch", { query, total: scannedCount.toLocaleString("en-US") })}
+                    {t("search.noResults", { query })}
                   </p>
                   {activeFilterCount > 0 && (
-                    <p className="mt-1 text-xs text-text-tertiary">
-                      {activeFilterCount} · {t("common.clearFilters")}
-                    </p>
-                  )}
-                  {!reachedEnd && (
                     <button
-                      onClick={scanMore}
-                      disabled={loading}
-                      className="mt-4 neo-badge rounded-xl px-4 py-2 text-xs font-bold text-primary disabled:opacity-40"
+                      onClick={resetFilters}
+                      className="mt-3 text-xs text-primary hover:underline"
                     >
-                      {t("search.scanDeeper")}
+                      {t("common.clearFilters")}
                     </button>
                   )}
                 </div>
@@ -346,11 +294,9 @@ export default function SearchPage() {
               {filtered.length > 0 && (
                 <div className="space-y-2">
                   <p className="mb-3 text-xs text-text-tertiary">
-                    {filtered.length === 1
-                      ? t("search.match", { count: filtered.length, total: scannedCount.toLocaleString("en-US") })
-                      : t("search.matches", { count: filtered.length, total: scannedCount.toLocaleString("en-US") })}
+                    {t("search.resultCount", { count: filtered.length })}
                     {activeFilterCount > 0 && (
-                      <span> · <button onClick={resetFilters} className="text-primary hover:underline">{t("common.clearFilters")}</button></span>
+                      <span> · {t("search.filteredFrom", { total: loadedCount })} · <button onClick={resetFilters} className="text-primary hover:underline">{t("common.clearFilters")}</button></span>
                     )}
                   </p>
                   {filtered.map((post, i) => (
@@ -359,7 +305,7 @@ export default function SearchPage() {
                         <img src={getThumbnailUrl(post)} alt={post.title} className="h-full w-full object-cover" loading="lazy" />
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
-                        <h3 className="truncate text-sm font-medium sm:text-base">{post.title || "Untitled"}</h3>
+                        <h3 className="truncate text-sm font-medium sm:text-base">{post.title || t("post.untitled")}</h3>
                         <div className="flex items-center gap-2">
                           <span className="neo-badge inline-block rounded-md px-1.5 py-0.5 text-[10px] font-bold" style={{ color: getServiceColor(post.service) }}>
                             {getServiceLabel(post.service)}
@@ -378,9 +324,9 @@ export default function SearchPage() {
                 </div>
               )}
 
-              {reachedEnd && searched && (
+              {reachedEnd && searched && filtered.length > 0 && (
                 <p className="mt-6 text-center text-[11px] text-text-tertiary">
-                  {t("search.scannedAll")}
+                  {t("common.endOfFeed")}
                 </p>
               )}
             </>

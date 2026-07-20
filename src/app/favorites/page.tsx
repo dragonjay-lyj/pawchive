@@ -47,6 +47,29 @@ function mapSupabaseFav(f: any): FavoriteCreator & { _supabase_id: string } {
   };
 }
 
+type FavSort = "added" | "updated" | "imported" | "name";
+
+function ts(v?: string): number {
+  if (!v) return 0;
+  const n = new Date(v).getTime();
+  return Number.isNaN(n) ? 0 : n;
+}
+
+/** Sort favorites without mutating the source array. "added" keeps upstream order. */
+function sortFavorites<T extends FavoriteCreator>(list: T[], sort: FavSort): T[] {
+  if (sort === "added") return list;
+  const copy = [...list];
+  if (sort === "name") {
+    copy.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  } else if (sort === "imported") {
+    copy.sort((a, b) => ts(b.last_imported || b.updated || b.indexed) - ts(a.last_imported || a.updated || a.indexed));
+  } else {
+    // updated
+    copy.sort((a, b) => ts(b.updated || b.last_imported || b.indexed) - ts(a.updated || a.last_imported || a.indexed));
+  }
+  return copy;
+}
+
 export default function FavoritesPage() {
   const { t } = useI18n();
   const { user } = useAuth();
@@ -56,7 +79,7 @@ export default function FavoritesPage() {
   const [error, setError] = useState<string | null>(null);
   const [authed, setAuthed] = useState(false);
   const [collections, setCollections] = useState<Collection[]>([]);
-  const [sortOrder, setSortOrder] = useState<"newest" | "updated">("newest");
+  const [sortOrder, setSortOrder] = useState<"added" | "updated" | "imported" | "name">("added");
 
   useEffect(() => {
     setCollections(listCollections());
@@ -182,30 +205,24 @@ export default function FavoritesPage() {
 
         {authed && !loading && !error && (
           <>
-            {/* Sort toggle */}
+            {/* Sort selector */}
             <div className="mb-6 flex items-center gap-2">
-              <span className="text-xs text-text-tertiary">{t("fav.sortBy")}:</span>
-              <button
-                onClick={() => setSortOrder("newest")}
-                className={`rounded-lg px-3 py-1 text-xs font-medium transition-all ${sortOrder === "newest" ? "bg-primary text-on-primary" : "bg-surface-2 text-text-secondary hover:bg-surface-3"}`}
+              <span className="text-xs text-text-tertiary">{t("fav.sort.label")}:</span>
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as typeof sortOrder)}
+                className="rounded-lg border border-white/10 bg-surface-2 px-3 py-1.5 text-xs text-text-secondary focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
               >
-                {t("manage.sortNewest")}
-              </button>
-              <button
-                onClick={() => setSortOrder("updated")}
-                className={`rounded-lg px-3 py-1 text-xs font-medium transition-all ${sortOrder === "updated" ? "bg-primary text-on-primary" : "bg-surface-2 text-text-secondary hover:bg-surface-3"}`}
-              >
-                {t("manage.sortUpdated")}
-              </button>
+                <option value="added">{t("fav.sort.added")}</option>
+                <option value="updated">{t("fav.sort.updated")}</option>
+                <option value="imported">{t("fav.sort.imported")}</option>
+                <option value="name">{t("fav.sort.name")}</option>
+              </select>
             </div>
 
             {(() => {
-              const displayArtists = sortOrder === "updated"
-                ? [...artists].sort((a, b) => new Date((b.updated || b.last_imported || b.indexed)).getTime() - new Date((a.updated || a.last_imported || a.indexed)).getTime())
-                : artists;
-              const displayPosts = sortOrder === "updated"
-                ? [...posts].sort((a, b) => new Date((b.updated || b.last_imported || b.indexed)).getTime() - new Date((a.updated || a.last_imported || a.indexed)).getTime())
-                : posts;
+              const displayArtists = sortFavorites(artists, sortOrder);
+              const displayPosts = sortFavorites(posts, sortOrder);
               return (
                 <>
             <CollectionsBento
