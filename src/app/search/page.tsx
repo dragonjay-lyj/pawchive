@@ -59,7 +59,7 @@ function dedupe(posts: Post[]): Post[] {
 // Upstream /posts doesn't implement q= filtering — we page through recent posts
 // and match locally against title/content.
 const PAGE_SIZE = 50;
-const INITIAL_PAGES = 4; // 200 posts prefetch on first query
+const INITIAL_PAGES = 20; // 1,000 posts prefetch (5 concurrent batches of 4)
 // No hard cap — scan until the upstream API returns empty (reachedEnd).
 // The reachedEnd flag from getRecentPosts handles stopping naturally.
 
@@ -89,23 +89,30 @@ export default function SearchPage() {
   const activeQueryRef = useRef<string>("");
 
   // Fetch more pages into the pool
+  const CONCURRENT = 4; // fetch 4 pages (200 posts) in parallel
+
   const fetchMore = async (targetPages: number): Promise<Post[]> => {
     let acc: Post[] = [];
     let localReachedEnd = reachedEnd;
     let currentScanned = scannedPages;
 
     while (currentScanned < targetPages && !localReachedEnd) {
-      const o = currentScanned * PAGE_SIZE;
-      const batch = await getRecentPosts({ o });
-      if (batch.length === 0) {
-        localReachedEnd = true;
-        break;
+      // Build offsets for concurrent batch
+      const offsets: number[] = [];
+      const end = Math.min(targetPages, currentScanned + CONCURRENT);
+      for (let i = currentScanned; i < end && !localReachedEnd; i++) {
+        offsets.push(i * PAGE_SIZE);
       }
-      acc = [...acc, ...batch];
-      currentScanned += 1;
-      if (batch.length < PAGE_SIZE) {
-        localReachedEnd = true;
-        break;
+
+      const batches = await Promise.all(
+        offsets.map((o) => getRecentPosts({ o }))
+      );
+
+      for (const batch of batches) {
+        if (batch.length === 0) { localReachedEnd = true; break; }
+        acc = [...acc, ...batch];
+        currentScanned++;
+        if (batch.length < PAGE_SIZE) { localReachedEnd = true; break; }
       }
     }
     setScannedPages(currentScanned);
@@ -119,28 +126,6 @@ export default function SearchPage() {
     setError(null);
     setSearched(true);
 
-    // 🔥 Phase 1: Fast upstream search (pawchive.pw/posts?q=)
-    let upstreamDone = false;
-    try {
-      const res = await fetch(`/api/search-upstream?q=${encodeURIComponent(q)}`);
-      if (res.ok) {
-        const json = await res.json();
-        const upstreamPosts: Post[] = json.posts ?? [];
-        if (upstreamPosts.length > 0) {
-          setPool(upstreamPosts);
-          setReachedEnd(true); // upstream results are complete — no need to scan all posts
-          upstreamDone = true;
-        }
-      }
-    } catch { /* fall through to pool scan */ }
-
-    if (upstreamDone) {
-      // Upstream gave us results — done
-      if (activeQueryRef.current === q) setLoading(false);
-      return;
-    }
-
-    // Phase 2: Fallback — local pool scan (existing behavior)
     try {
       if (pool.length < INITIAL_PAGES * PAGE_SIZE && !reachedEnd) {
         const extra = await fetchMore(INITIAL_PAGES);
@@ -196,7 +181,7 @@ export default function SearchPage() {
     if (loading || reachedEnd) return;
     setLoading(true);
     try {
-      const extra = await fetchMore(scannedPages + 2);
+      const extra = await fetchMore(scannedPages + 10); // +500 posts per scroll trigger
       setPool((prev) => dedupe([...prev, ...extra]));
     } catch {
       setError("Failed to load more.");
