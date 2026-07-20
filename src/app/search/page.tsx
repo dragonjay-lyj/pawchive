@@ -68,6 +68,8 @@ function matches(post: Post, q: string): boolean {
   if (post.title?.toLowerCase().includes(needle)) return true;
   if (post.content?.toLowerCase().includes(needle)) return true;
   if (post.substring?.toLowerCase().includes(needle)) return true;
+  if (post.attachments?.some(a => a.name?.toLowerCase().includes(needle))) return true;
+  if (post.file?.name?.toLowerCase().includes(needle)) return true;
   return false;
 }
 
