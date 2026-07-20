@@ -194,7 +194,7 @@ export function CommentSection({ postId }: { postId: string }) {
                         <span className="rounded bg-primary/20 px-1 py-0 text-[9px] text-primary">you</span>
                       )}
                       <span className="text-[10px] text-text-tertiary">
-                        {new Date(c.created_at).toLocaleDateString()}
+                        {new Date(c.created_at).toLocaleDateString("en-US")}
                       </span>
                     </div>
                     {/* Reply button */}

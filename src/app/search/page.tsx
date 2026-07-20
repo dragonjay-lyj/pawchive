@@ -60,7 +60,8 @@ function dedupe(posts: Post[]): Post[] {
 // and match locally against title/content.
 const PAGE_SIZE = 50;
 const INITIAL_PAGES = 4; // 200 posts prefetch on first query
-const MAX_AUTO_PAGES = 20; // safety cap for auto-scan (~1000 posts)
+// No hard cap — scan until the upstream API returns empty (reachedEnd).
+// The reachedEnd flag from getRecentPosts handles stopping naturally.
 
 function matches(post: Post, q: string): boolean {
   const needle = q.toLowerCase();
@@ -169,7 +170,7 @@ export default function SearchPage() {
 
   // "Scan more" — expand the pool
   const scanMore = async () => {
-    if (loading || reachedEnd || scannedPages >= MAX_AUTO_PAGES) return;
+    if (loading || reachedEnd) return;
     setLoading(true);
     try {
       const extra = await fetchMore(scannedPages + 2);
@@ -183,7 +184,7 @@ export default function SearchPage() {
 
   // Infinite scroll to auto-scan
   useEffect(() => {
-    if (!query.trim() || loading || reachedEnd || scannedPages >= MAX_AUTO_PAGES) return;
+    if (!query.trim() || loading || reachedEnd) return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) scanMore();
@@ -323,7 +324,7 @@ export default function SearchPage() {
                       {activeFilterCount} · {t("common.clearFilters")}
                     </p>
                   )}
-                  {!reachedEnd && scannedPages < MAX_AUTO_PAGES && (
+                  {!reachedEnd && (
                     <button
                       onClick={scanMore}
                       disabled={loading}
@@ -368,19 +369,7 @@ export default function SearchPage() {
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                 </div>
               )}
-              {!loading && searched && !reachedEnd && scannedPages >= MAX_AUTO_PAGES && (
-                <div className="mt-6 text-center">
-                  <p className="text-[11px] text-text-tertiary mb-2">
-                    {t("search.reachedCap", { total: (MAX_AUTO_PAGES * PAGE_SIZE).toLocaleString("en-US") })}
-                  </p>
-                  <button
-                    onClick={() => { setScannedPages(0); setReachedEnd(false); scanMore(); }}
-                    className="neo-badge rounded-xl px-4 py-2 text-xs font-bold text-primary"
-                  >
-                    {t("search.scanFurther")}
-                  </button>
-                </div>
-              )}
+
               {reachedEnd && searched && (
                 <p className="mt-6 text-center text-[11px] text-text-tertiary">
                   {t("search.scannedAll")}

@@ -109,7 +109,7 @@ export function PostDetail({ post, error: initError }: { post: UserPost | null; 
           {post.published && (
             <>
               <span>·</span>
-              <span>{new Date(post.published).toLocaleDateString()}</span>
+              <span>{new Date(post.published).toLocaleDateString("en-US")}</span>
             </>
           )}
         </div>
