@@ -119,17 +119,38 @@ export default function SearchPage() {
     setError(null);
     setSearched(true);
 
+    // 🔥 Phase 1: Fast upstream search (pawchive.pw/posts?q=)
+    let upstreamDone = false;
     try {
-      // Ensure pool has at least INITIAL_PAGES worth of posts
+      const res = await fetch(`/api/search-upstream?q=${encodeURIComponent(q)}`);
+      if (res.ok) {
+        const json = await res.json();
+        const upstreamPosts: Post[] = json.posts ?? [];
+        if (upstreamPosts.length > 0) {
+          setPool(upstreamPosts);
+          setReachedEnd(true); // upstream results are complete — no need to scan all posts
+          upstreamDone = true;
+        }
+      }
+    } catch { /* fall through to pool scan */ }
+
+    if (upstreamDone) {
+      // Upstream gave us results — done
+      if (activeQueryRef.current === q) setLoading(false);
+      return;
+    }
+
+    // Phase 2: Fallback — local pool scan (existing behavior)
+    try {
       if (pool.length < INITIAL_PAGES * PAGE_SIZE && !reachedEnd) {
         const extra = await fetchMore(INITIAL_PAGES);
-        if (activeQueryRef.current !== q) return; // query changed midway
+        if (activeQueryRef.current !== q) return;
         setPool((prev) => dedupe([...prev, ...extra]));
       }
     } catch {
       setError("Failed to fetch posts.");
     } finally {
-      setLoading(false);
+      if (activeQueryRef.current === q) setLoading(false);
     }
   };
 
