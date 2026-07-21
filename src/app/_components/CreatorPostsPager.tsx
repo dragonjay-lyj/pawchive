@@ -28,8 +28,10 @@ export function CreatorPostsPager({ service, creatorId, initialPosts }: Props) {
   const [pending, startTransition] = useTransition();
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  const [failed, setFailed] = useState(false);
+
   const loadMore = () => {
-    if (pending || done) return;
+    if (pending || done || failed) return;
     setErr(null);
     startTransition(async () => {
       try {
@@ -41,19 +43,25 @@ export function CreatorPostsPager({ service, creatorId, initialPosts }: Props) {
         setPosts((prev) => [...prev, ...deduped]);
         setOffset(offset + PAGE_SIZE);
         if (next.length < PAGE_SIZE) setDone(true);
-      } catch { setErr(t("browse.noMatches")); }
+      } catch {
+        // Halt auto-scroll on failure so the observer doesn't spam retries.
+        setFailed(true);
+        setErr(t("search.loadMoreFailed"));
+      }
     });
   };
 
+  const retry = () => { setFailed(false); setErr(null); loadMore(); };
+
   useEffect(() => {
-    if (done) return;
+    if (done || failed) return;
     const el = sentinelRef.current;
     if (!el) return;
     const io = new IntersectionObserver((entries) => { if (entries[0].isIntersecting && !pending) loadMore(); }, { threshold: 0.1 });
     io.observe(el);
     return () => io.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [done, pending, offset]);
+  }, [done, pending, failed, offset]);
 
   return (
     <>
@@ -83,7 +91,11 @@ export function CreatorPostsPager({ service, creatorId, initialPosts }: Props) {
       <div ref={sentinelRef} className="h-2" />
       <div className="mt-6 flex flex-col items-center gap-2">
         {err && <p className="text-xs text-error">{err}</p>}
-        {done ? (posts.length > 0 && <p className="text-xs text-text-tertiary">{t("browse.allLoaded")}</p>) : (
+        {failed ? (
+          <button type="button" onClick={retry} disabled={pending} className="neo-badge rounded-xl px-6 py-2.5 text-sm font-bold text-primary disabled:opacity-60">
+            {pending ? t("common.loading") : t("common.retry")}
+          </button>
+        ) : done ? (posts.length > 0 && <p className="text-xs text-text-tertiary">{t("browse.allLoaded")}</p>) : (
           <button type="button" onClick={loadMore} disabled={pending} className="rounded-xl bg-surface-2 px-6 py-3 text-sm font-medium text-text-secondary transition-all hover:bg-surface-3 hover:text-text-primary disabled:opacity-60">
             {pending ? t("common.loading") : t("common.loadMore")}
           </button>

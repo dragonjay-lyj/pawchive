@@ -71,22 +71,58 @@ export function getSessionCookie(): string | null {
   return _sessionCookie;
 }
 
+// De-duplicate identical in-flight requests so bursts (React strict mode,
+// multiple components) collapse into one network call.
+const inflight = new Map<string, Promise<unknown>>();
+
 // ---------- Generic fetch (public, cached) ----------
 async function fetchJSON<T>(url: string, cacheKey?: string): Promise<T> {
   if (cacheKey) {
     const cached = cacheGet<T>(cacheKey);
     if (cached) return cached;
   }
-  const res = await fetch(url, {
-    headers: { Accept: "application/json" },
-    next: { revalidate: 60 },
-  });
-  if (!res.ok) {
-    throw new Error(`API error ${res.status}: ${res.statusText}`);
+
+  const dedupeKey = cacheKey ?? url;
+  const existing = inflight.get(dedupeKey);
+  if (existing) return existing as Promise<T>;
+
+  const run = (async (): Promise<T> => {
+    // One retry on transient status; the proxy already retries upstream,
+    // this covers proxy-level 429/502 surfaced to the client.
+    const RETRYABLE = new Set([429, 502, 503, 504]);
+    let lastErr: unknown;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, 1500));
+      try {
+        const res = await fetch(url, {
+          headers: { Accept: "application/json" },
+          next: { revalidate: 60 },
+        });
+        if (!res.ok) {
+          if (RETRYABLE.has(res.status) && attempt === 0) {
+            lastErr = new Error(`API error ${res.status}`);
+            continue;
+          }
+          throw new Error(`API error ${res.status}: ${res.statusText}`);
+        }
+        const data: T = await res.json();
+        if (cacheKey) cacheSet(cacheKey, data);
+        return data;
+      } catch (e) {
+        lastErr = e;
+        if (attempt === 0) continue;
+        throw e;
+      }
+    }
+    throw lastErr instanceof Error ? lastErr : new Error("fetch failed");
+  })();
+
+  inflight.set(dedupeKey, run);
+  try {
+    return await run;
+  } finally {
+    inflight.delete(dedupeKey);
   }
-  const data: T = await res.json();
-  if (cacheKey) cacheSet(cacheKey, data);
-  return data;
 }
 
 // ---------- Authenticated fetch ----------

@@ -70,6 +70,7 @@ export default function SearchPage() {
   const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [reachedEnd, setReachedEnd] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState(false); // pause auto-scroll on failure
   const [searched, setSearched] = useState(false);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -85,6 +86,7 @@ export default function SearchPage() {
     setPool([]);
     setOffset(0);
     setReachedEnd(false);
+    setLoadMoreError(false);
     try {
       const results = await getRecentPosts({ q, o: 0 });
       if (activeQueryRef.current !== q) return; // superseded by newer query
@@ -101,8 +103,9 @@ export default function SearchPage() {
   // Load the next page of the current query.
   const loadMore = async () => {
     const q = query.trim();
-    if (!q || loading || reachedEnd) return;
+    if (!q || loading || reachedEnd || loadMoreError) return;
     setLoading(true);
+    setLoadMoreError(false);
     try {
       const results = await getRecentPosts({ q, o: offset });
       if (activeQueryRef.current !== q) return;
@@ -110,10 +113,19 @@ export default function SearchPage() {
       setOffset((o) => o + PAGE_SIZE);
       if (results.length < PAGE_SIZE) setReachedEnd(true);
     } catch {
+      // Stop the auto-scroll loop so a failing request doesn't get
+      // hammered repeatedly by the IntersectionObserver. User can retry.
+      setLoadMoreError(true);
       setError("Failed to load more.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const retryLoadMore = () => {
+    setLoadMoreError(false);
+    setError(null);
+    void loadMore();
   };
 
   // Debounced query change
@@ -153,9 +165,10 @@ export default function SearchPage() {
     });
   }, [pool, query, filters]);
 
-  // Infinite scroll → load next page of the query
+  // Infinite scroll → load next page of the query.
+  // Pauses when a page fails (loadMoreError) to avoid a request storm.
   useEffect(() => {
-    if (!query.trim() || loading || reachedEnd) return;
+    if (!query.trim() || loading || reachedEnd || loadMoreError) return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) loadMore();
@@ -166,7 +179,7 @@ export default function SearchPage() {
     if (el) observer.observe(el);
     return () => { if (el) observer.unobserve(el); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, loading, reachedEnd, offset]);
+  }, [query, loading, reachedEnd, loadMoreError, offset]);
 
   const activeFilterCount =
     filters.platforms.size +
@@ -321,6 +334,18 @@ export default function SearchPage() {
               {loading && pool.length > 0 && (
                 <div className="mt-4 flex justify-center">
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                </div>
+              )}
+
+              {loadMoreError && !loading && pool.length > 0 && (
+                <div className="mt-4 flex flex-col items-center gap-2">
+                  <p className="text-xs text-text-tertiary">{t("search.loadMoreFailed")}</p>
+                  <button
+                    onClick={retryLoadMore}
+                    className="neo-badge rounded-xl px-4 py-2 text-xs font-bold text-primary"
+                  >
+                    {t("common.retry")}
+                  </button>
                 </div>
               )}
 

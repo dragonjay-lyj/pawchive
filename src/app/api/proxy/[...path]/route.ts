@@ -55,15 +55,59 @@ async function proxyRequest(req: NextRequest, params: { path: string[] }): Promi
   if (sessionOverride) cookieParts.push(`session=${sessionOverride}`);
   if (cookieParts.length) forwardHeaders.set('Cookie', cookieParts.join('; '));
 
+  // Present as a real browser — the upstream Cloudflare rules are UA-gated.
+  if (!forwardHeaders.has('user-agent')) {
+    forwardHeaders.set(
+      'user-agent',
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    );
+  }
+  forwardHeaders.set('accept-language', 'en-US,en;q=0.9');
+
   let body: string | undefined;
   if (req.method !== 'GET' && req.method !== 'HEAD') body = await req.text();
 
-  const up = await fetch(targetUrl, {
-    method: req.method,
-    headers: forwardHeaders,
-    body,
-    redirect: 'follow',
-  });
+  // Retry transient upstream failures (rate limit / gateway) with backoff.
+  // Only idempotent GETs are retried; POST/DELETE go through once.
+  const RETRYABLE = new Set([429, 502, 503, 504, 520, 521, 522, 523, 524]);
+  const maxAttempts = req.method === 'GET' ? 3 : 1;
+  let up: Response | null = null;
+  let lastStatus = 0;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (attempt > 0) {
+      // Honor Retry-After when present, else exponential backoff (capped).
+      const retryAfter = up?.headers.get('retry-after');
+      let waitMs = Math.min(2000 * 2 ** (attempt - 1), 6000);
+      if (retryAfter) {
+        const secs = Number(retryAfter);
+        if (Number.isFinite(secs)) waitMs = Math.min(secs * 1000, 8000);
+      }
+      await new Promise((r) => setTimeout(r, waitMs));
+    }
+    try {
+      up = await fetch(targetUrl, {
+        method: req.method,
+        headers: forwardHeaders,
+        body,
+        redirect: 'follow',
+        signal: AbortSignal.timeout(45000),
+      });
+    } catch {
+      lastStatus = 502;
+      up = null;
+      continue;
+    }
+    lastStatus = up.status;
+    if (!RETRYABLE.has(up.status)) break;
+  }
+
+  if (!up) {
+    return NextResponse.json(
+      { error: 'upstream-unreachable', status: lastStatus },
+      { status: 502, headers: { 'Access-Control-Allow-Origin': '*' } },
+    );
+  }
 
   const h = new Headers();
   up.headers.forEach((v, k) => {
